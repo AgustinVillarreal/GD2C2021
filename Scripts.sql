@@ -1,140 +1,168 @@
 BEGIN TRANSACTION
 
 CREATE TABLE gd_esquema.Chofer (
-	legajo INT PRIMARY KEY,
-	nombre NVARCHAR(255),
-	apellido NVARCHAR(255),
-	dni DECIMAL(18,0),
-	direccion NVARCHAR(255),
-	telefono INT,
-	mail NVARCHAR(255),
-	fecha_nac DATETIME2(3),
-	costo_hora INT,
+	legajo	INT PRIMARY KEY,
+	nombre NVARCHAR(255)	NOT NULL,
+	apellido NVARCHAR(255)	NOT NULL,
+	dni DECIMAL(18,0)		NOT NULL,
+	direccion NVARCHAR(255) NOT NULL,
+	telefono INT			NOT NULL,
+	mail NVARCHAR(255)		NOT NULL,
+	fecha_nac DATETIME2(3)	NOT NULL,
+	costo_hora INT			NOT NULL,
+)
+
+CREATE TABLE gd_esquema.Ciudad (
+	ciudad_id INT IDENTITY(1,1) PRIMARY KEY,
+	nombre NVARCHAR(255) NOT NULL,
 )
 
 CREATE TABLE gd_esquema.Recorrido (
-	recorrido_id INT PRIMARY KEY,
-	ciudad_origen NVARCHAR(255),
-	ciudad_destino NVARCHAR(255),
-	km_recorridos INT,
-	precio DECIMAL(18,2),
+	recorrido_id INT IDENTITY(1,1) PRIMARY KEY,
+	ciudad_origen_id INT	NOT NULL,
+	ciudad_destino_id INT	NOT NULL,
+	km_recorridos INT		NOT NULL,
+	precio DECIMAL(18,2)	NOT NULL,
+	FOREIGN KEY (ciudad_destino_id) REFERENCES gd_esquema.Ciudad (ciudad_id),
+	FOREIGN KEY (ciudad_destino_id) REFERENCES gd_esquema.Ciudad (ciudad_id)
 )
 
 CREATE TABLE gd_esquema.Tipo_paquete (
-	paquete_descripcion NVARCHAR(255) PRIMARY KEY,
-	paquete_largo_max DECIMAL(18,2),
-	paquete_peso_max DECIMAL(18,2),
-	paquete_ancho_max DECIMAL(18,2),
-	paquete_precio DECIMAL(18,2),
-	paquete_alto_max DECIMAL(18,2)
+	tipo_paquete_id INT IDENTITY(1,1) PRIMARY KEY,
+	paquete_descripcion NVARCHAR(255)	NOT NULL,
+	paquete_largo_max DECIMAL(18,2)		NOT NULL,
+	paquete_peso_max DECIMAL(18,2)		NOT NULL,
+	paquete_ancho_max DECIMAL(18,2)		NOT NULL,
+	paquete_precio DECIMAL(18,2)		NOT NULL,
+	paquete_alto_max DECIMAL(18,2)		NOT NULL
+)
+
+CREATE TABLE gd_esquema.Marca (
+	marca_id INT IDENTITY(1,1) PRIMARY KEY,
+	nombre NVARCHAR(255) NOT NULL,
 )
 
 CREATE TABLE gd_esquema.Modelo(
-	modelo_id INT PRIMARY KEY,
-	modelo_descripcion NVARCHAR(255),
-	velocidad_max INT,
-	capacidad_tanque INT,
-	capacidad_carga INT,
-	marca NVARCHAR(255)
+	modelo_id INT IDENTITY(1,1) PRIMARY KEY,
+	marca_id INT NOT NULL,
+	modelo_descripcion NVARCHAR(255) NOT NULL,
+	velocidad_max INT NOT NULL,
+	capacidad_tanque INT NOT NULL,
+	capacidad_carga INT NOT NULL,
+	FOREIGN KEY (marca_id) REFERENCES gd_esquema.Marca (marca_id)
 )
 
 CREATE TABLE gd_esquema.Taller(
-	nombre NVARCHAR(255) PRIMARY KEY,
-	teléfono DECIMAL(18,0),
-	ciudad NVARCHAR(255),
-	dirección NVARCHAR(255),
-	mail NVARCHAR(255)
+	taller_id INT IDENTITY(1,1) PRIMARY KEY, 
+	ciudad_id INT NOT NULL,
+	nombre NVARCHAR(255) NOT NULL,
+	teléfono DECIMAL(18,0) NOT NULL,
+	dirección NVARCHAR(255) NOT NULL,
+	mail NVARCHAR(255) NOT NULL,
+	FOREIGN KEY (ciudad_id) REFERENCES gd_esquema.Ciudad (ciudad_id)
 )
 
-CREATE TABLE  gd_esquema.Material(
-    material_id INT PRIMARY KEY, 
-    material_detalle NVARCHAR(255),
-    precio DECIMAL(18, 2)
+CREATE TABLE  gd_esquema.Material (
+    material_id INT IDENTITY(1,1) PRIMARY KEY, 
+    material_detalle NVARCHAR(255) NOT NULL,
+    precio DECIMAL(18, 2) NOT NULL,
+)
+
+CREATE TABLE gd_esquema.Tipo_tarea (
+	tipo_tarea_id INT IDENTITY(1,1) PRIMARY KEY,
+	descripcion NVARCHAR(255) NOT NULL,
 )
 
 CREATE TABLE  gd_esquema.Tarea (
-    tarea_id INT PRIMARY KEY,
-    tipo NVARCHAR(255),
-    tiempo_estimado INT, 
-    descripcion NVARCHAR(255),
+    tarea_id INT IDENTITY(1,1) PRIMARY KEY,
+    tipo_tarea_id INT NOT NULL,
+    tiempo_estimado INT NOT NULL, 
+    descripcion NVARCHAR(255) NOT NULL,
+	FOREIGN KEY (tipo_tarea_id) REFERENCES gd_esquema.Tipo_tarea (tipo_tarea_id)
 )
 
---FOREIGN KEYS
-
 CREATE TABLE gd_esquema.Camion(
-	patente NVARCHAR(255) PRIMARY KEY,
-	chasis NVARCHAR(255),
-	motor NVARCHAR(255),
-	fecha_alta DATETIME2(3),
-	modelo_id INT,
+	camion_id INT IDENTITY(1,1) PRIMARY KEY, 
+	modelo_id INT NOT NULL,
+	patente NVARCHAR(255) NOT NULL,
+	chasis NVARCHAR(255) NOT NULL,
+	motor NVARCHAR(255) NOT NULL,
+	fecha_alta DATETIME2(3) NOT NULL,
 	FOREIGN KEY (modelo_id) REFERENCES gd_esquema.Modelo (modelo_id)
 )
 
 CREATE TABLE gd_esquema.Viaje (
-	viaje_id INT PRIMARY KEY,
-	camion NVARCHAR(255),
-	chofer INT,
-	recorrido INT,
-	fecha_inicio DATETIME2(7),
-	fecha_fin DATETIME2(3),
-	lts_combustible DECIMAL(18,2),
-	FOREIGN KEY (camion)	REFERENCES gd_esquema.Camion		(patente),
-	FOREIGN KEY (chofer)	REFERENCES gd_esquema.Chofer		(legajo),
-	FOREIGN KEY (recorrido) REFERENCES gd_esquema.Recorrido		(recorrido_id)
+	viaje_id INT IDENTITY(1,1) PRIMARY KEY,
+	camion_id INT NOT NULL,
+	recorrido_id INT NOT NULL,
+	chofer INT NOT NULL,
+	fecha_inicio DATETIME2(7) NOT NULL,
+	fecha_fin DATETIME2(3) NOT NULL,
+	lts_combustible DECIMAL(18,2) NOT NULL,
+	FOREIGN KEY (camion_id)	REFERENCES gd_esquema.Camion (camion_id),
+	FOREIGN KEY (chofer)	REFERENCES gd_esquema.Chofer (legajo),
+	FOREIGN KEY (recorrido_id) REFERENCES gd_esquema.Recorrido (recorrido_id)
 )
 
 CREATE TABLE gd_esquema.Paquete (
-	id_paquete INT PRIMARY KEY,
-	tipo_paquete NVARCHAR(255)
-	FOREIGN KEY (tipo_paquete) REFERENCES gd_esquema.Tipo_paquete(paquete_descripcion)
+	paquete_id INT IDENTITY(1,1) PRIMARY KEY,
+	tipo_paquete_id INT NOT NULL,
+	FOREIGN KEY (tipo_paquete_id) REFERENCES gd_esquema.Tipo_paquete(tipo_paquete_id)
 )
 
 CREATE TABLE gd_esquema.Viaje_x_paquete (
-	id_paquete INT,
-	viaje INT,
-	cantidad INT,
-	PRIMARY KEY (id_paquete, viaje),
-	FOREIGN KEY (id_paquete) REFERENCES gd_esquema.Paquete(id_paquete),
-	FOREIGN KEY (viaje) REFERENCES gd_esquema.Viaje(viaje_id)
+	paquete_id INT NOT NULL,
+	viaje_id INT NOT NULL,
+	cantidad INT NOT NULL,
+	PRIMARY KEY (paquete_id, viaje_id),
+	FOREIGN KEY (paquete_id) REFERENCES gd_esquema.Paquete(paquete_id),
+	FOREIGN KEY (viaje_id) REFERENCES gd_esquema.Viaje(viaje_id)
+)
+
+CREATE TABLE gd_esquema.Estado (
+	estado_id INT IDENTITY(1,1) PRIMARY KEY,
+	descripcion NVARCHAR(255) NOT NULL,
 )
 
 CREATE TABLE gd_esquema.Orden_trabajo (
-	orden_id INT PRIMARY KEY,
-	fecha_generacion NVARCHAR(255),
-	camion NVARCHAR(255),
-	estado NVARCHAR(255),
-	FOREIGN KEY (camion) REFERENCES gd_esquema.Camion(patente)
+	orden_id INT IDENTITY(1,1) PRIMARY KEY,
+	fecha_generacion NVARCHAR(255) NOT NULL,
+	camion_id INT NOT NULL,
+	estado_id INT NOT NULL,
+	FOREIGN KEY (camion_id) REFERENCES gd_esquema.Camion(camion_id),
+	FOREIGN KEY (estado_id) REFERENCES gd_esquema.Estado(estado_id)
 )
 
 CREATE TABLE gd_esquema.Mecanico(
 	legajo INT PRIMARY KEY,
-	nombre NVARCHAR(255),
-	apellido NVARCHAR(255),
-	dni DECIMAL(18,0),
-	direccion NVARCHAR(255),
-	teléfono INT,
-	mail NVARCHAR(255),
-	fecha_nacimiento DATETIME2(3),
-	costo_hora INT,
-	nombre_taller NVARCHAR(255),
-	FOREIGN KEY (nombre_taller) REFERENCES gd_esquema.Taller (nombre)
+	nombre NVARCHAR(255) NOT NULL,
+	apellido NVARCHAR(255) NOT NULL,
+	dni DECIMAL(18,0) NOT NULL,
+	direccion NVARCHAR(255) NOT NULL,
+	teléfono INT NOT NULL,
+	mail NVARCHAR(255) NOT NULL,
+	fecha_nacimiento DATETIME2(3) NOT NULL,
+	costo_hora INT NOT NULL,
+	taller_id INT NOT NULL,
+	FOREIGN KEY (taller_id) REFERENCES gd_esquema.Taller (taller_id)
 )
 
 CREATE TABLE gd_esquema.Tarea_x_orden(
     orden_id INT,
-    codigo_tarea INT,
-    inicio_planificado datetime2,
-    inicio_real datetime2,
-    fin_real datetime2,
-    mecanico INT
-    PRIMARY KEY (orden_id, codigo_tarea),
-    FOREIGN KEY (mecanico) references gd_esquema.Mecanico (legajo),
+    tarea_id INT,
+    mecanico_id INT NOT NULL,
+    inicio_planificado DATETIME2 NOT NULL,
+    inicio_real DATETIME2 NOT NULL,
+    fin_real DATETIME2 NOT NULL,
+    PRIMARY KEY (orden_id, tarea_id),
+    FOREIGN KEY (tarea_id) references gd_esquema.Tarea (tarea_id),
+    FOREIGN KEY (mecanico_id) references gd_esquema.Mecanico (legajo),
     FOREIGN KEY (orden_id) references  gd_esquema.Orden_trabajo (orden_id)
 )
 
 CREATE TABLE  gd_esquema.Material_x_tarea(
-    material_id INT,
-    tarea_id INT, 
+    material_id INT NOT NULL,
+    tarea_id INT NOT NULL, 
     FOREIGN KEY (material_id) REFERENCES  gd_esquema.Material (material_id),
     FOREIGN KEY (tarea_id) REFERENCES  gd_esquema.Tarea (tarea_id)
 )
