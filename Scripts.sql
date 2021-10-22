@@ -139,7 +139,7 @@ CREATE TABLE gd_esquema.Mecanico(
 	apellido NVARCHAR(255) NOT NULL,
 	dni DECIMAL(18,0) NOT NULL,
 	direccion NVARCHAR(255) NOT NULL,
-	teléfono INT NOT NULL,
+	telefono INT NOT NULL,
 	mail NVARCHAR(255) NOT NULL,
 	fecha_nacimiento DATETIME2(3) NOT NULL,
 	costo_hora INT NOT NULL,
@@ -163,6 +163,7 @@ CREATE TABLE gd_esquema.Tarea_x_orden(
 CREATE TABLE  gd_esquema.Material_x_tarea(
     material_id INT NOT NULL,
     tarea_id INT NOT NULL, 
+	PRIMARY KEY (material_id, tarea_id),
     FOREIGN KEY (material_id) REFERENCES  gd_esquema.Material (material_id),
     FOREIGN KEY (tarea_id) REFERENCES  gd_esquema.Tarea (tarea_id)
 )
