@@ -56,15 +56,15 @@ CREATE TABLE gd_esquema.Taller(
 	taller_id INT IDENTITY(1,1) PRIMARY KEY, 
 	ciudad_id INT NOT NULL,
 	nombre NVARCHAR(255) NOT NULL,
-	teléfono DECIMAL(18,0) NOT NULL,
-	dirección NVARCHAR(255) NOT NULL,
+	telefono DECIMAL(18,0) NOT NULL,
+	direccion NVARCHAR(255) NOT NULL,
 	mail NVARCHAR(255) NOT NULL,
 	FOREIGN KEY (ciudad_id) REFERENCES gd_esquema.Ciudad (ciudad_id)
 )
 
 CREATE TABLE  gd_esquema.Material (
     material_id INT IDENTITY(1,1) PRIMARY KEY, 
-    material_detalle NVARCHAR(255) NOT NULL,
+    material_descripcion NVARCHAR(255) NOT NULL,
     precio DECIMAL(18, 2) NOT NULL,
 )
 
@@ -97,8 +97,8 @@ CREATE TABLE gd_esquema.Viaje (
 	recorrido_id INT NOT NULL,
 	chofer INT NOT NULL,
 	fecha_inicio DATETIME2(7) NOT NULL,
-	fecha_fin DATETIME2(3) NOT NULL,
-	lts_combustible DECIMAL(18,2) NOT NULL,
+	fecha_fin DATETIME2(3) NULL,
+	lts_combustible DECIMAL(18,2) NULL,
 	FOREIGN KEY (camion_id)	REFERENCES gd_esquema.Camion (camion_id),
 	FOREIGN KEY (chofer)	REFERENCES gd_esquema.Chofer (legajo),
 	FOREIGN KEY (recorrido_id) REFERENCES gd_esquema.Recorrido (recorrido_id)
@@ -168,3 +168,4 @@ CREATE TABLE  gd_esquema.Material_x_tarea(
 )
 
 COMMIT TRANSACTION
+
