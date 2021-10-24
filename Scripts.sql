@@ -74,7 +74,7 @@ CREATE TABLE gd_esquema.Tipo_tarea (
 )
 
 CREATE TABLE  gd_esquema.Tarea (
-    tarea_id INT IDENTITY(1,1) PRIMARY KEY,
+    tarea_id INT PRIMARY KEY,
     tipo_tarea_id INT NOT NULL,
     tiempo_estimado INT NOT NULL, 
     descripcion NVARCHAR(255) NOT NULL,

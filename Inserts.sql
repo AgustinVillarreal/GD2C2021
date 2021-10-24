@@ -61,11 +61,11 @@ INSERT INTO gd_esquema.Tipo_tarea (descripcion)
 	WHERE TIPO_TAREA IS NOT NULL
 
 -- Tarea
-INSERT INTO gd_esquema.Tarea (tipo_tarea_id, tiempo_estimado, descripcion)
-	SELECT DISTINCT tt.tipo_tarea_id, TAREA_TIEMPO_ESTIMADO, TAREA_DESCRIPCION
+INSERT INTO gd_esquema.Tarea (tarea_id, tipo_tarea_id, tiempo_estimado, descripcion)
+	SELECT DISTINCT TAREA_CODIGO, tt.tipo_tarea_id, TAREA_TIEMPO_ESTIMADO, TAREA_DESCRIPCION
 	FROM gd_esquema.Maestra m
 	JOIN gd_esquema.Tipo_tarea tt ON (tt.descripcion = m.TIPO_TAREA)
-	WHERE TAREA_TIEMPO_ESTIMADO IS NOT NULL
+	WHERE TAREA_CODIGO IS NOT NULL
 
 -- Camion
 INSERT INTO gd_esquema.Camion (modelo_id, patente, chasis, motor, fecha_alta)
@@ -125,7 +125,7 @@ INSERT INTO gd_esquema.Mecanico (legajo, nombre, apellido, dni, direccion, telef
 	JOIN gd_esquema.taller t ON (t.nombre = TALLER_NOMBRE)
 	WHERE MECANICO_NRO_LEGAJO IS NOT NULL
 
--- Tarea_x_orden TODOOOOOOOO
+-- Tarea_x_orden Creo que está bien
 INSERT INTO gd_esquema.Tarea_x_orden (orden_id, tarea_id, mecanico_id, inicio_planificado, inicio_real,
 		fin_real)
 	SELECT DISTINCT orden_id, tarea_id, legajo, TAREA_FECHA_INICIO_PLANIFICADO, TAREA_FECHA_INICIO,
@@ -133,13 +133,16 @@ INSERT INTO gd_esquema.Tarea_x_orden (orden_id, tarea_id, mecanico_id, inicio_pl
 	JOIN gd_esquema.Camion c ON (c.patente = m.CAMION_PATENTE)
 	JOIN gd_esquema.Orden_trabajo ot ON (ot.fecha_generacion = m.ORDEN_TRABAJO_FECHA AND 
 		ot.camion_id = c.camion_id)
-	JOIN gd_esquema.Tipo_tarea tt ON (tt.descripcion = m.TIPO_TAREA)
-	JOIN gd_esquema.Tarea t ON (t.tipo_tarea_id = tt.tipo_tarea_id)
+	JOIN gd_esquema.Tarea t ON (t.tarea_id = m.TAREA_CODIGO)
 	JOIN gd_esquema.Mecanico mec ON (mec.legajo = m.MECANICO_NRO_LEGAJO)
 	ORDER BY orden_id, tarea_id
 
--- Material_x_tarea TODO
+-- SELECT DE VERIFICACIÓN
+SELECT DISTINCT ORDEN_TRABAJO_ESTADO, ORDEN_TRABAJO_FECHA, CAMION_PATENTE, TAREA_CODIGO, MECANICO_NRO_LEGAJO, TAREA_FECHA_INICIO_PLANIFICADO, TAREA_FECHA_INICIO,
+	TAREA_FECHA_FIN FROM gd_esquema.Maestra m WHERE TAREA_CODIGO IS NOT NULL
+
+-- Material_x_tarea Creo que está bien
 INSERT INTO gd_esquema.Material_x_tarea (material_id, tarea_id)
 	SELECT DISTINCT material_id, tarea_id FROM gd_esquema.Maestra m
 	JOIN gd_esquema.Material mate ON (m.MATERIAL_DESCRIPCION = mate.material_descripcion)
-	JOIN gd_esquema.Tarea
+	JOIN gd_esquema.Tarea t ON (t.tarea_id = m.TAREA_CODIGO)
