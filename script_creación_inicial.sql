@@ -155,13 +155,13 @@ CREATE TABLE los_desnormalizados.Mecanico(
 
 CREATE TABLE los_desnormalizados.Tarea_x_orden(
 	tarea_x_orden_id INT IDENTITY(1,1) PRIMARY KEY,
-    orden_id INT,
-    tarea_id INT,
+    orden_id INT NOT NULL,
+    tarea_id INT NOT NULL,
     mecanico_id INT NOT NULL,
     inicio_planificado DATETIME2 NOT NULL,
-    inicio_real DATETIME2 NOT NULL,
-    fin_real DATETIME2 NOT NULL,
-	tiempo_real INT NOT NULL,
+    inicio_real DATETIME2 NULL,
+    fin_real DATETIME2 NULL,
+	tiempo_real INT NULL,
     FOREIGN KEY (tarea_id) references los_desnormalizados.Tarea (tarea_id),
     FOREIGN KEY (mecanico_id) references los_desnormalizados.Mecanico (legajo),
     FOREIGN KEY (orden_id) references  los_desnormalizados.Orden_trabajo (orden_id)
