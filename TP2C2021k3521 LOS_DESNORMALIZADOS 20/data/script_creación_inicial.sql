@@ -1,9 +1,12 @@
 USE GD2C2021
+
+--CREAMOS EL ESQUEMA
 IF(NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'los_desnormalizados'))
   BEGIN
       exec ('CREATE SCHEMA [los_desnormalizados]');
    END
 
+--CREAMOS LAS TABLAS
 CREATE TABLE los_desnormalizados.Chofer (
 	legajo	INT PRIMARY KEY,
 	nombre NVARCHAR(255)	NOT NULL,
@@ -176,6 +179,9 @@ CREATE TABLE  los_desnormalizados.Material_x_tarea(
     FOREIGN KEY (tarea_id) REFERENCES  los_desnormalizados.Tarea (tarea_id)
 )
 
+
+--CREAMOS INSERTS PARA LA MIGRACION HACIA LAS TABLAS CREADAS PREVIAMENTE
+
 -- Chofer
 INSERT INTO los_desnormalizados.Chofer (legajo, nombre, apellido, dni, direccion, telefono, mail, fecha_nac, costo_hora)
 	SELECT DISTINCT CHOFER_NRO_LEGAJO, CHOFER_NOMBRE, CHOFER_APELLIDO, CHOFER_DNI, CHOFER_DIRECCION, CHOFER_TELEFONO, 
@@ -322,7 +328,7 @@ INSERT INTO los_desnormalizados.Tarea_x_orden (orden_id, tarea_id, mecanico_id, 
 	JOIN los_desnormalizados.Mecanico mec ON (mec.legajo = m.MECANICO_NRO_LEGAJO)
 
 
--- Material_x_tarea Creo que est· bien
+-- Material_x_tarea Creo que est√° bien
 INSERT INTO los_desnormalizados.Material_x_tarea (material_id, tarea_id, cant_material)
 	SELECT DISTINCT material_id, 
 					tarea_id, 
