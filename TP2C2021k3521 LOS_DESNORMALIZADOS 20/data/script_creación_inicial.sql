@@ -180,15 +180,22 @@ CREATE TABLE  los_desnormalizados.Material_x_tarea(
 )
 
 
---CREAMOS INSERTS PARA LA MIGRACION HACIA LAS TABLAS CREADAS PREVIAMENTE
+--CREAMOS PROCEDURES PARA LA MIGRACION HACIA LAS TABLAS CREADAS PREVIAMENTE
 
 -- Chofer
-INSERT INTO los_desnormalizados.Chofer (legajo, nombre, apellido, dni, direccion, telefono, mail, fecha_nac, costo_hora)
+CREATE PROCEDURE los_desnormalizados.migracionChofer
+as
+begin
+	INSERT INTO los_desnormalizados.Chofer (legajo, nombre, apellido, dni, direccion, telefono, mail, fecha_nac, costo_hora)
 	SELECT DISTINCT CHOFER_NRO_LEGAJO, CHOFER_NOMBRE, CHOFER_APELLIDO, CHOFER_DNI, CHOFER_DIRECCION, CHOFER_TELEFONO, 
 	CHOFER_MAIL, CHOFER_FECHA_NAC, CHOFER_COSTO_HORA FROM gd_esquema.Maestra
 	WHERE CHOFER_NRO_LEGAJO IS NOT NULL
+END
 
 -- Ciudad
+CREATE PROCEDURE los_desnormalizados.migracionCiudad
+as
+begin
 INSERT INTO los_desnormalizados.Ciudad (nombre)
 	SELECT DISTINCT RECORRIDO_CIUDAD_DESTINO FROM gd_esquema.Maestra
 		WHERE RECORRIDO_CIUDAD_DESTINO IS NOT NULL
@@ -198,62 +205,96 @@ INSERT INTO los_desnormalizados.Ciudad (nombre)
 	UNION
 	SELECT DISTINCT TALLER_CIUDAD FROM gd_esquema.Maestra
 		WHERE TALLER_CIUDAD IS NOT NULL
+END
 
 -- Recorrido
+CREATE PROCEDURE los_desnormalizados.migracionRecorrido
+as
+begin
 INSERT INTO los_desnormalizados.Recorrido (ciudad_origen_id, ciudad_destino_id, km_recorridos,
 		precio)
 	SELECT DISTINCT c1.ciudad_id, c2.ciudad_id, RECORRIDO_KM, RECORRIDO_PRECIO FROM gd_esquema.Maestra m
 		JOIN los_desnormalizados.Ciudad c1 ON (c1.nombre = m.RECORRIDO_CIUDAD_ORIGEN)
 		JOIN los_desnormalizados.Ciudad c2 ON (c2.nombre = m.RECORRIDO_CIUDAD_DESTINO)
 	WHERE RECORRIDO_KM IS NOT NULL
-
+END
 
 -- Tipo Paquete
+CREATE PROCEDURE los_desnormalizados.migracionTipoPaquete
+as
+begin
 INSERT INTO los_desnormalizados.Tipo_paquete (paquete_descripcion, paquete_largo_max,
 		paquete_peso_max, paquete_ancho_max, paquete_precio, paquete_alto_max)
 	SELECT DISTINCT PAQUETE_DESCRIPCION, PAQUETE_LARGO_MAX, PAQUETE_PESO_MAX, PAQUETE_ANCHO_MAX, 
 		PAQUETE_PRECIO, PAQUETE_ALTO_MAX FROM gd_esquema.Maestra
 	WHERE PAQUETE_DESCRIPCION IS NOT NULL
+END
 
 -- Marca
+CREATE PROCEDURE los_desnormalizados.migracionMarca
+as
+begin
 INSERT INTO los_desnormalizados.Marca (nombre)
 	SELECT DISTINCT MARCA_CAMION_MARCA FROM gd_esquema.Maestra
 	WHERE MARCA_CAMION_MARCA IS NOT NULL
+END
 
 -- Modelo
+CREATE PROCEDURE los_desnormalizados.migracionModelo
+as
+begin
 INSERT INTO los_desnormalizados.Modelo (marca_id, modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga)
 	SELECT DISTINCT marca.marca_id, MODELO_CAMION, MODELO_VELOCIDAD_MAX, MODELO_CAPACIDAD_TANQUE, 
 	MODELO_CAPACIDAD_CARGA FROM gd_esquema.Maestra maestra
 		JOIN los_desnormalizados.Marca marca ON (marca.nombre = maestra.MARCA_CAMION_MARCA)
 	WHERE MODELO_CAMION IS NOT NULL
+END
 
 -- Taller
+CREATE PROCEDURE los_desnormalizados.migracionTaller
+as
+begin
 INSERT INTO los_desnormalizados.Taller (ciudad_id, nombre, telefono, direccion, mail)
 	SELECT DISTINCT c.ciudad_id, TALLER_NOMBRE, TALLER_TELEFONO, TALLER_DIRECCION, 
 	TALLER_MAIL
 	FROM gd_esquema.Maestra m
 		JOIN los_desnormalizados.Ciudad c on (c.nombre = m.TALLER_CIUDAD)
 	WHERE TALLER_NOMBRE IS NOT NULL
+END
 
 -- Material
+CREATE PROCEDURE los_desnormalizados.migracionMaterial
+as
+begin
 INSERT INTO los_desnormalizados.Material (material_cod, material_descripcion, precio)
 	SELECT DISTINCT MATERIAL_COD, MATERIAL_DESCRIPCION, MATERIAL_PRECIO FROM gd_esquema.Maestra
 	WHERE MATERIAL_COD IS NOT NULL
+END
 
 -- Tipo_tarea
+CREATE PROCEDURE los_desnormalizados.migracionTipoTarea
+as
+begin
 INSERT INTO los_desnormalizados.Tipo_tarea (descripcion)
 	SELECT DISTINCT TIPO_TAREA FROM gd_esquema.Maestra
 	WHERE TIPO_TAREA IS NOT NULL
+END
 
--- Tarea:
+-- Tarea
+CREATE PROCEDURE los_desnormalizados.migracionTarea
+as
+begin
 INSERT INTO los_desnormalizados.Tarea (tarea_id, tipo_tarea_id, tiempo_estimado, descripcion)
 	SELECT DISTINCT TAREA_CODIGO, tt.tipo_tarea_id, TAREA_TIEMPO_ESTIMADO, TAREA_DESCRIPCION
 	FROM gd_esquema.Maestra m
 	JOIN los_desnormalizados.Tipo_tarea tt ON (tt.descripcion = m.TIPO_TAREA)
 	WHERE TAREA_CODIGO IS NOT NULL
-
+END
 
 -- Camion
+CREATE PROCEDURE los_desnormalizados.migracionCamion
+as
+begin
 INSERT INTO los_desnormalizados.Camion (modelo_id, patente, chasis, motor, fecha_alta)
 	SELECT DISTINCT modelo.modelo_id, CAMION_PATENTE, CAMION_NRO_CHASIS,
 	CAMION_NRO_MOTOR, CAMION_FECHA_ALTA FROM gd_esquema.Maestra m
@@ -263,8 +304,12 @@ INSERT INTO los_desnormalizados.Camion (modelo_id, patente, chasis, motor, fecha
 	JOIN los_desnormalizados.Marca marca ON (marca.nombre = m.MARCA_CAMION_MARCA)
 	WHERE CAMION_PATENTE IS NOT NULL
 	ORDER BY CAMION_PATENTE
+END
 
 -- Viaje
+CREATE PROCEDURE los_desnormalizados.migracionViaje
+as
+begin
 INSERT INTO los_desnormalizados.Viaje (camion_id, recorrido_id, chofer, fecha_inicio,
 	fecha_fin, lts_combustible)
 	SELECT DISTINCT c.camion_id, r.recorrido_id, ch.legajo, VIAJE_FECHA_INICIO, 
@@ -276,13 +321,20 @@ INSERT INTO los_desnormalizados.Viaje (camion_id, recorrido_id, chofer, fecha_in
 		c2.ciudad_id = r.ciudad_destino_id)
 	JOIN los_desnormalizados.Chofer ch ON (ch.legajo = m.CHOFER_NRO_LEGAJO)
 	WHERE VIAJE_FECHA_INICIO IS NOT NULL
-
+END
 
 -- Paquete
+CREATE PROCEDURE los_desnormalizados.migracionPaquete
+as
+begin
 INSERT INTO los_desnormalizados.Paquete (tipo_paquete_id)
 	SELECT tipo_paquete_id FROM los_desnormalizados.Tipo_paquete
+END
 
 -- Viaje_x_paquete
+CREATE PROCEDURE los_desnormalizados.migracionViajeXPaquete
+as
+begin
 INSERT INTO los_desnormalizados.Viaje_x_paquete (paquete_id, viaje_id, cantidad, precioTotal)
 	SELECT DISTINCT paquete_id, viaje_id, SUM(PAQUETE_CANTIDAD), SUM(PAQUETE_CANTIDAD) * tp.paquete_precio + r.precio
 	FROM gd_esquema.Maestra m
@@ -293,19 +345,31 @@ INSERT INTO los_desnormalizados.Viaje_x_paquete (paquete_id, viaje_id, cantidad,
 		JOIN los_desnormalizados.Paquete p ON (p.tipo_paquete_id = tp.tipo_paquete_id)
 		JOIN los_desnormalizados.Recorrido r ON (r.recorrido_id = v.recorrido_id)
 		group by viaje_id, paquete_id, tp.paquete_precio, r.precio
+END
 
 -- Estado
+CREATE PROCEDURE los_desnormalizados.migracionEstado
+as
+begin
 INSERT INTO los_desnormalizados.Estado (descripcion)
 	SELECT DISTINCT ORDEN_TRABAJO_ESTADO FROM gd_esquema.Maestra
 	WHERE ORDEN_TRABAJO_ESTADO IS NOT NULL
+END
 
--- Oden_trabajo
+-- Orden_trabajo
+CREATE PROCEDURE los_desnormalizados.migracionOrdenTrabajo
+as
+begin
 INSERT INTO los_desnormalizados.Orden_trabajo (fecha_generacion, camion_id, estado_id)
 	SELECT DISTINCT ORDEN_TRABAJO_FECHA, camion_id, estado_id FROM gd_esquema.Maestra m
 	JOIN los_desnormalizados.Camion c ON (c.patente = m.CAMION_PATENTE)
 	JOIN los_desnormalizados.Estado e ON (e.descripcion = m.ORDEN_TRABAJO_ESTADO)
+END
 
 --Mecanico
+CREATE PROCEDURE los_desnormalizados.migracionMecanico
+as
+begin
 INSERT INTO los_desnormalizados.Mecanico (legajo, nombre, apellido, dni, direccion, telefono, mail, 
 	fecha_nacimiento, costo_hora, taller_id)
 	SELECT DISTINCT MECANICO_NRO_LEGAJO, MECANICO_NOMBRE, MECANICO_APELLIDO, MECANICO_DNI,
@@ -313,8 +377,12 @@ INSERT INTO los_desnormalizados.Mecanico (legajo, nombre, apellido, dni, direcci
 		t.taller_id FROM gd_esquema.Maestra m
 	JOIN los_desnormalizados.taller t ON (t.nombre = TALLER_NOMBRE)
 	WHERE MECANICO_NRO_LEGAJO IS NOT NULL
+END
 
 -- Tarea_x_orden
+CREATE PROCEDURE los_desnormalizados.migracionTareaXOrden
+as
+begin
 INSERT INTO los_desnormalizados.Tarea_x_orden (orden_id, tarea_id, mecanico_id, inicio_planificado, inicio_real,
 		fin_real, tiempo_real)
 	SELECT DISTINCT orden_id, tarea_id, legajo, TAREA_FECHA_INICIO_PLANIFICADO, TAREA_FECHA_INICIO, TAREA_FECHA_FIN, DATEDIFF(day, TAREA_FECHA_INICIO, TAREA_FECHA_FIN)
@@ -324,9 +392,12 @@ INSERT INTO los_desnormalizados.Tarea_x_orden (orden_id, tarea_id, mecanico_id, 
 		ot.camion_id = c.camion_id)
 	JOIN los_desnormalizados.Tarea t ON (t.tarea_id = m.TAREA_CODIGO)
 	JOIN los_desnormalizados.Mecanico mec ON (mec.legajo = m.MECANICO_NRO_LEGAJO)
-
+END
 
 -- Material_x_tarea
+CREATE PROCEDURE los_desnormalizados.migracionMaterialXTarea
+as
+begin
 INSERT INTO los_desnormalizados.Material_x_tarea (material_id, tarea_id, cant_material)
 	SELECT DISTINCT material_id, 
 					tarea_id, 
@@ -340,3 +411,32 @@ INSERT INTO los_desnormalizados.Material_x_tarea (material_id, tarea_id, cant_ma
 	JOIN los_desnormalizados.Material mate ON (m.MATERIAL_DESCRIPCION = mate.material_descripcion)
 	JOIN los_desnormalizados.Tarea t ON (t.tarea_id = m.TAREA_CODIGO) 
     GROUP BY TAREA_CODIGO, m.MATERIAL_COD, m.MATERIAL_DESCRIPCION, material_id, tarea_id
+END
+
+CREATE PROCEDURE los_desnormalizados.migracion
+as
+begin
+	exec los_desnormalizados.migracionMaterialXTarea
+	exec los_desnormalizados.migracionTareaXOrden
+	exec los_desnormalizados.migracionMecanico
+	exec los_desnormalizados.migracionOrdenTrabajo
+	exec los_desnormalizados.migracionEstado
+	exec los_desnormalizados.migracionViajeXPaquete
+	exec los_desnormalizados.migracionPaquete
+	exec los_desnormalizados.migracionViaje
+	exec los_desnormalizados.migracionCamion
+	exec los_desnormalizados.migracionTarea
+	exec los_desnormalizados.migracionTipoTarea
+	exec los_desnormalizados.migracionMaterial
+	exec los_desnormalizados.migracionTaller
+	exec los_desnormalizados.migracionModelo
+	exec los_desnormalizados.migracionMarca
+	exec los_desnormalizados.migracionTipoPaquete
+	exec los_desnormalizados.migracionRecorrido
+	exec los_desnormalizados.migracionCiudad
+	exec los_desnormalizados.migracionChofer
+end
+
+exec los_desnormalizados.migracion
+
+
