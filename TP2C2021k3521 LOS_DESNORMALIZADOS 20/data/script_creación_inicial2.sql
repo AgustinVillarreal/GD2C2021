@@ -236,6 +236,9 @@ CREATE TABLE los_desnormalizados.Estado (
 
 --CREAMOS PROCEDURES PARA LA MIGRACION HACIA LAS TABLAS CREADAS PREVIAMENTE
 
+
+--CREAMOS PROCEDURES PARA LA MIGRACION HACIA LAS TABLAS CREADAS PREVIAMENTE
+
 -- Chofer
 
 IF OBJECT_ID ('los_desnormalizados.migracionChofer', 'P') IS NOT NULL  
@@ -550,7 +553,6 @@ GO
 CREATE PROCEDURE los_desnormalizados.migracion
 as
 begin
-
 	exec los_desnormalizados.migracionChofer
 	exec los_desnormalizados.migracionCiudad
 	exec los_desnormalizados.migracionRecorrido
@@ -575,8 +577,8 @@ GO
 
 exec los_desnormalizados.migracion
 
-
 -- CONSTRAINTS
+
 
 ALTER TABLE los_desnormalizados.Viaje 
 ADD	FOREIGN KEY (camion_id)	REFERENCES los_desnormalizados.Camion (camion_id),
