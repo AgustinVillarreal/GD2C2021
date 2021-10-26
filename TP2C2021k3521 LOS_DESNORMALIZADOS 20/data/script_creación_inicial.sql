@@ -1,12 +1,17 @@
 USE GD2C2021
-
+GO
 --CREAMOS EL ESQUEMA
 IF(NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'los_desnormalizados'))
   BEGIN
       exec ('CREATE SCHEMA [los_desnormalizados]');
    END
 
+
 --CREAMOS LAS TABLAS
+
+IF OBJECT_ID ('los_desnormalizados.Chofer', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Chofer; 
+GO
 CREATE TABLE los_desnormalizados.Chofer (
 	legajo	INT PRIMARY KEY,
 	nombre NVARCHAR(255)	NOT NULL,
@@ -19,11 +24,17 @@ CREATE TABLE los_desnormalizados.Chofer (
 	costo_hora INT			NOT NULL,
 )
 
+IF OBJECT_ID ('los_desnormalizados.Ciudad', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Ciudad; 
+GO
 CREATE TABLE los_desnormalizados.Ciudad (
 	ciudad_id INT IDENTITY(1,1) PRIMARY KEY,
 	nombre NVARCHAR(255) NOT NULL,
 )
 
+IF OBJECT_ID ('los_desnormalizados.Recorrido', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Recorrido; 
+GO
 CREATE TABLE los_desnormalizados.Recorrido (
 	recorrido_id INT IDENTITY(1,1) PRIMARY KEY,
 	ciudad_origen_id INT	NOT NULL,
@@ -34,6 +45,9 @@ CREATE TABLE los_desnormalizados.Recorrido (
 	FOREIGN KEY (ciudad_destino_id) REFERENCES los_desnormalizados.Ciudad (ciudad_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Tipo_paquete', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Tipo_paquete; 
+GO
 CREATE TABLE los_desnormalizados.Tipo_paquete (
 	tipo_paquete_id INT IDENTITY(1,1) PRIMARY KEY,
 	paquete_descripcion NVARCHAR(255)	NOT NULL,
@@ -44,11 +58,17 @@ CREATE TABLE los_desnormalizados.Tipo_paquete (
 	paquete_alto_max DECIMAL(18,2)		NOT NULL
 )
 
+IF OBJECT_ID ('los_desnormalizados.Marca', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Marca; 
+GO
 CREATE TABLE los_desnormalizados.Marca (
 	marca_id INT IDENTITY(1,1) PRIMARY KEY,
 	nombre NVARCHAR(255) NOT NULL,
 )
 
+IF OBJECT_ID ('los_desnormalizados.Modelo', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Modelo; 
+GO
 CREATE TABLE los_desnormalizados.Modelo(
 	modelo_id INT IDENTITY(1,1) PRIMARY KEY,
 	marca_id INT NOT NULL,
@@ -59,6 +79,9 @@ CREATE TABLE los_desnormalizados.Modelo(
 	FOREIGN KEY (marca_id) REFERENCES los_desnormalizados.Marca (marca_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Taller', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Taller; 
+GO
 CREATE TABLE los_desnormalizados.Taller(
 	taller_id INT IDENTITY(1,1) PRIMARY KEY, 
 	ciudad_id INT NOT NULL,
@@ -69,6 +92,9 @@ CREATE TABLE los_desnormalizados.Taller(
 	FOREIGN KEY (ciudad_id) REFERENCES los_desnormalizados.Ciudad (ciudad_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Material', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Material; 
+GO
 CREATE TABLE  los_desnormalizados.Material (
     	material_id INT IDENTITY(1,1) PRIMARY KEY,
 	material_cod NVARCHAR(100) NOT NULL,
@@ -76,11 +102,17 @@ CREATE TABLE  los_desnormalizados.Material (
     	precio DECIMAL(18, 2) NOT NULL,
 )
 
+IF OBJECT_ID ('los_desnormalizados.Tipo_tarea', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Tipo_tarea; 
+GO
 CREATE TABLE los_desnormalizados.Tipo_tarea (
 	tipo_tarea_id INT IDENTITY(1,1) PRIMARY KEY,
 	descripcion NVARCHAR(255) NOT NULL,
 )
 
+IF OBJECT_ID ('los_desnormalizados.Tarea', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Tarea; 
+GO
 CREATE TABLE  los_desnormalizados.Tarea (
     	tarea_id INT PRIMARY KEY,
     	tipo_tarea_id INT NOT NULL,
@@ -89,6 +121,9 @@ CREATE TABLE  los_desnormalizados.Tarea (
 	FOREIGN KEY (tipo_tarea_id) REFERENCES los_desnormalizados.Tipo_tarea (tipo_tarea_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Camion', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Camion; 
+GO
 CREATE TABLE los_desnormalizados.Camion(
 	camion_id INT IDENTITY(1,1) PRIMARY KEY, 
 	modelo_id INT NOT NULL,
@@ -99,6 +134,9 @@ CREATE TABLE los_desnormalizados.Camion(
 	FOREIGN KEY (modelo_id) REFERENCES los_desnormalizados.Modelo (modelo_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Viaje', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Viaje; 
+GO
 CREATE TABLE los_desnormalizados.Viaje (
 	viaje_id INT IDENTITY(1,1) PRIMARY KEY,
 	camion_id INT NOT NULL,
@@ -112,12 +150,18 @@ CREATE TABLE los_desnormalizados.Viaje (
 	FOREIGN KEY (recorrido_id) REFERENCES los_desnormalizados.Recorrido (recorrido_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Paquete', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Paquete; 
+GO
 CREATE TABLE los_desnormalizados.Paquete (
 	paquete_id INT IDENTITY(1,1) PRIMARY KEY,
 	tipo_paquete_id INT NOT NULL,
 	FOREIGN KEY (tipo_paquete_id) REFERENCES los_desnormalizados.Tipo_paquete(tipo_paquete_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Viaje_x_paquete', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Viaje_x_paquete; 
+GO
 CREATE TABLE los_desnormalizados.Viaje_x_paquete (
 	paquete_id INT NOT NULL,
 	viaje_id INT NOT NULL,
@@ -128,11 +172,17 @@ CREATE TABLE los_desnormalizados.Viaje_x_paquete (
 	FOREIGN KEY (viaje_id) REFERENCES los_desnormalizados.Viaje(viaje_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Estado', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Estado; 
+GO
 CREATE TABLE los_desnormalizados.Estado (
 	estado_id INT IDENTITY(1,1) PRIMARY KEY,
 	descripcion NVARCHAR(255) NOT NULL,
 )
 
+IF OBJECT_ID ('los_desnormalizados.Orden_trabajo', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Orden_trabajo; 
+GO
 CREATE TABLE los_desnormalizados.Orden_trabajo (
 	orden_id INT IDENTITY(1,1) PRIMARY KEY,
 	fecha_generacion NVARCHAR(255) NOT NULL,
@@ -142,6 +192,9 @@ CREATE TABLE los_desnormalizados.Orden_trabajo (
 	FOREIGN KEY (estado_id) REFERENCES los_desnormalizados.Estado(estado_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Mecanico', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Mecanico; 
+GO
 CREATE TABLE los_desnormalizados.Mecanico(
 	legajo INT PRIMARY KEY,
 	nombre NVARCHAR(255) NOT NULL,
@@ -156,6 +209,9 @@ CREATE TABLE los_desnormalizados.Mecanico(
 	FOREIGN KEY (taller_id) REFERENCES los_desnormalizados.Taller (taller_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Tarea_x_orden', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Tarea_x_orden; 
+GO
 CREATE TABLE los_desnormalizados.Tarea_x_orden(
 	tarea_x_orden_id INT IDENTITY(1,1) PRIMARY KEY,
     	orden_id INT NOT NULL,
@@ -170,6 +226,9 @@ CREATE TABLE los_desnormalizados.Tarea_x_orden(
     	FOREIGN KEY (orden_id) references  los_desnormalizados.Orden_trabajo (orden_id)
 )
 
+IF OBJECT_ID ('los_desnormalizados.Material_x_tarea', 'U') IS NOT NULL  
+   DROP TABLE los_desnormalizados.Material_x_tarea; 
+GO
 CREATE TABLE  los_desnormalizados.Material_x_tarea(
     	material_id INT NOT NULL,
     	tarea_id INT NOT NULL, 
@@ -183,6 +242,10 @@ CREATE TABLE  los_desnormalizados.Material_x_tarea(
 --CREAMOS PROCEDURES PARA LA MIGRACION HACIA LAS TABLAS CREADAS PREVIAMENTE
 
 -- Chofer
+
+IF OBJECT_ID ('los_desnormalizados.migracionChofer', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionChofer; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionChofer
 as
 begin
@@ -191,8 +254,12 @@ begin
 	CHOFER_MAIL, CHOFER_FECHA_NAC, CHOFER_COSTO_HORA FROM gd_esquema.Maestra
 	WHERE CHOFER_NRO_LEGAJO IS NOT NULL
 END
+GO
 
 -- Ciudad
+IF OBJECT_ID ('los_desnormalizados.migracionCiudad', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionCiudad; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionCiudad
 as
 begin
@@ -206,8 +273,12 @@ INSERT INTO los_desnormalizados.Ciudad (nombre)
 	SELECT DISTINCT TALLER_CIUDAD FROM gd_esquema.Maestra
 		WHERE TALLER_CIUDAD IS NOT NULL
 END
+GO
 
 -- Recorrido
+IF OBJECT_ID ('los_desnormalizados.migracionRecorrido', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionRecorrido; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionRecorrido
 as
 begin
@@ -218,8 +289,12 @@ INSERT INTO los_desnormalizados.Recorrido (ciudad_origen_id, ciudad_destino_id, 
 		JOIN los_desnormalizados.Ciudad c2 ON (c2.nombre = m.RECORRIDO_CIUDAD_DESTINO)
 	WHERE RECORRIDO_KM IS NOT NULL
 END
+GO
 
 -- Tipo Paquete
+IF OBJECT_ID ('los_desnormalizados.migracionTipoPaquete', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionTipoPaquete; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionTipoPaquete
 as
 begin
@@ -229,8 +304,12 @@ INSERT INTO los_desnormalizados.Tipo_paquete (paquete_descripcion, paquete_largo
 		PAQUETE_PRECIO, PAQUETE_ALTO_MAX FROM gd_esquema.Maestra
 	WHERE PAQUETE_DESCRIPCION IS NOT NULL
 END
+GO
 
 -- Marca
+IF OBJECT_ID ('los_desnormalizados.migracionMarca', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionMarca; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionMarca
 as
 begin
@@ -238,8 +317,12 @@ INSERT INTO los_desnormalizados.Marca (nombre)
 	SELECT DISTINCT MARCA_CAMION_MARCA FROM gd_esquema.Maestra
 	WHERE MARCA_CAMION_MARCA IS NOT NULL
 END
+GO
 
 -- Modelo
+IF OBJECT_ID ('los_desnormalizados.migracionModelo', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionModelo; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionModelo
 as
 begin
@@ -249,8 +332,12 @@ INSERT INTO los_desnormalizados.Modelo (marca_id, modelo_descripcion, velocidad_
 		JOIN los_desnormalizados.Marca marca ON (marca.nombre = maestra.MARCA_CAMION_MARCA)
 	WHERE MODELO_CAMION IS NOT NULL
 END
+GO
 
 -- Taller
+IF OBJECT_ID ('los_desnormalizados.migracionTaller', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionTaller; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionTaller
 as
 begin
@@ -261,8 +348,12 @@ INSERT INTO los_desnormalizados.Taller (ciudad_id, nombre, telefono, direccion, 
 		JOIN los_desnormalizados.Ciudad c on (c.nombre = m.TALLER_CIUDAD)
 	WHERE TALLER_NOMBRE IS NOT NULL
 END
+GO
 
 -- Material
+IF OBJECT_ID ('los_desnormalizados.migracionMaterial', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionMaterial; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionMaterial
 as
 begin
@@ -270,8 +361,12 @@ INSERT INTO los_desnormalizados.Material (material_cod, material_descripcion, pr
 	SELECT DISTINCT MATERIAL_COD, MATERIAL_DESCRIPCION, MATERIAL_PRECIO FROM gd_esquema.Maestra
 	WHERE MATERIAL_COD IS NOT NULL
 END
+GO
 
 -- Tipo_tarea
+IF OBJECT_ID ('los_desnormalizados.migracionTipoTarea', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionTipoTarea; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionTipoTarea
 as
 begin
@@ -279,8 +374,12 @@ INSERT INTO los_desnormalizados.Tipo_tarea (descripcion)
 	SELECT DISTINCT TIPO_TAREA FROM gd_esquema.Maestra
 	WHERE TIPO_TAREA IS NOT NULL
 END
+GO
 
 -- Tarea
+IF OBJECT_ID ('los_desnormalizados.migracionTarea', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionTarea; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionTarea
 as
 begin
@@ -290,8 +389,12 @@ INSERT INTO los_desnormalizados.Tarea (tarea_id, tipo_tarea_id, tiempo_estimado,
 	JOIN los_desnormalizados.Tipo_tarea tt ON (tt.descripcion = m.TIPO_TAREA)
 	WHERE TAREA_CODIGO IS NOT NULL
 END
+GO
 
 -- Camion
+IF OBJECT_ID ('los_desnormalizados.migracionCamion', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionCamion; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionCamion
 as
 begin
@@ -305,8 +408,12 @@ INSERT INTO los_desnormalizados.Camion (modelo_id, patente, chasis, motor, fecha
 	WHERE CAMION_PATENTE IS NOT NULL
 	ORDER BY CAMION_PATENTE
 END
+GO
 
 -- Viaje
+IF OBJECT_ID ('los_desnormalizados.migracionViaje', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionViaje; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionViaje
 as
 begin
@@ -322,16 +429,24 @@ INSERT INTO los_desnormalizados.Viaje (camion_id, recorrido_id, chofer, fecha_in
 	JOIN los_desnormalizados.Chofer ch ON (ch.legajo = m.CHOFER_NRO_LEGAJO)
 	WHERE VIAJE_FECHA_INICIO IS NOT NULL
 END
+GO
 
 -- Paquete
+IF OBJECT_ID ('los_desnormalizados.migracionPaquete', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionPaquete; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionPaquete
 as
 begin
 INSERT INTO los_desnormalizados.Paquete (tipo_paquete_id)
 	SELECT tipo_paquete_id FROM los_desnormalizados.Tipo_paquete
 END
+GO
 
 -- Viaje_x_paquete
+IF OBJECT_ID ('los_desnormalizados.migracionViajeXPaquete', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionViajeXPaquete; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionViajeXPaquete
 as
 begin
@@ -346,8 +461,12 @@ INSERT INTO los_desnormalizados.Viaje_x_paquete (paquete_id, viaje_id, cantidad,
 		JOIN los_desnormalizados.Recorrido r ON (r.recorrido_id = v.recorrido_id)
 		group by viaje_id, paquete_id, tp.paquete_precio, r.precio
 END
+GO
 
 -- Estado
+IF OBJECT_ID ('los_desnormalizados.migracionEstado', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionEstado; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionEstado
 as
 begin
@@ -355,8 +474,12 @@ INSERT INTO los_desnormalizados.Estado (descripcion)
 	SELECT DISTINCT ORDEN_TRABAJO_ESTADO FROM gd_esquema.Maestra
 	WHERE ORDEN_TRABAJO_ESTADO IS NOT NULL
 END
+GO
 
 -- Orden_trabajo
+IF OBJECT_ID ('los_desnormalizados.migracionOrdenTrabajo', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionOrdenTrabajo; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionOrdenTrabajo
 as
 begin
@@ -365,8 +488,12 @@ INSERT INTO los_desnormalizados.Orden_trabajo (fecha_generacion, camion_id, esta
 	JOIN los_desnormalizados.Camion c ON (c.patente = m.CAMION_PATENTE)
 	JOIN los_desnormalizados.Estado e ON (e.descripcion = m.ORDEN_TRABAJO_ESTADO)
 END
+GO
 
 --Mecanico
+IF OBJECT_ID ('los_desnormalizados.migracionMecanico', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionMecanico; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionMecanico
 as
 begin
@@ -378,8 +505,12 @@ INSERT INTO los_desnormalizados.Mecanico (legajo, nombre, apellido, dni, direcci
 	JOIN los_desnormalizados.taller t ON (t.nombre = TALLER_NOMBRE)
 	WHERE MECANICO_NRO_LEGAJO IS NOT NULL
 END
+GO
 
 -- Tarea_x_orden
+IF OBJECT_ID ('los_desnormalizados.migracionTareaXOrden', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionTareaXOrden; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionTareaXOrden
 as
 begin
@@ -393,8 +524,12 @@ INSERT INTO los_desnormalizados.Tarea_x_orden (orden_id, tarea_id, mecanico_id, 
 	JOIN los_desnormalizados.Tarea t ON (t.tarea_id = m.TAREA_CODIGO)
 	JOIN los_desnormalizados.Mecanico mec ON (mec.legajo = m.MECANICO_NRO_LEGAJO)
 END
+GO
 
 -- Material_x_tarea
+IF OBJECT_ID ('los_desnormalizados.migracionMaterialXTarea', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracionMaterialXTarea; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracionMaterialXTarea
 as
 begin
@@ -412,7 +547,11 @@ INSERT INTO los_desnormalizados.Material_x_tarea (material_id, tarea_id, cant_ma
 	JOIN los_desnormalizados.Tarea t ON (t.tarea_id = m.TAREA_CODIGO) 
     GROUP BY TAREA_CODIGO, m.MATERIAL_COD, m.MATERIAL_DESCRIPCION, material_id, tarea_id
 END
+GO
 
+IF OBJECT_ID ('los_desnormalizados.migracion', 'P') IS NOT NULL  
+   DROP PROCEDURE los_desnormalizados.migracion; 
+GO
 CREATE PROCEDURE los_desnormalizados.migracion
 as
 begin
@@ -436,6 +575,7 @@ begin
 	exec los_desnormalizados.migracionCiudad
 	exec los_desnormalizados.migracionChofer
 end
+GO
 
 exec los_desnormalizados.migracion
 
