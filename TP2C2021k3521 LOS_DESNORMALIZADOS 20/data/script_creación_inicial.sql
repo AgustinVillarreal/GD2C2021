@@ -314,7 +314,7 @@ INSERT INTO los_desnormalizados.Mecanico (legajo, nombre, apellido, dni, direcci
 	JOIN los_desnormalizados.taller t ON (t.nombre = TALLER_NOMBRE)
 	WHERE MECANICO_NRO_LEGAJO IS NOT NULL
 
--- Tarea_x_orden. TODO: Agregar en la estrategia
+-- Tarea_x_orden
 INSERT INTO los_desnormalizados.Tarea_x_orden (orden_id, tarea_id, mecanico_id, inicio_planificado, inicio_real,
 		fin_real, tiempo_real)
 	SELECT DISTINCT orden_id, tarea_id, legajo, TAREA_FECHA_INICIO_PLANIFICADO, TAREA_FECHA_INICIO, TAREA_FECHA_FIN, DATEDIFF(day, TAREA_FECHA_INICIO, TAREA_FECHA_FIN)
@@ -326,7 +326,7 @@ INSERT INTO los_desnormalizados.Tarea_x_orden (orden_id, tarea_id, mecanico_id, 
 	JOIN los_desnormalizados.Mecanico mec ON (mec.legajo = m.MECANICO_NRO_LEGAJO)
 
 
--- Material_x_tarea Creo que está bien
+-- Material_x_tarea
 INSERT INTO los_desnormalizados.Material_x_tarea (material_id, tarea_id, cant_material)
 	SELECT DISTINCT material_id, 
 					tarea_id, 
