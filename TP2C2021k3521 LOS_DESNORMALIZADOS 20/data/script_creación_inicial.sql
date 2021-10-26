@@ -70,10 +70,10 @@ CREATE TABLE los_desnormalizados.Taller(
 )
 
 CREATE TABLE  los_desnormalizados.Material (
-    material_id INT IDENTITY(1,1) PRIMARY KEY,
+    	material_id INT IDENTITY(1,1) PRIMARY KEY,
 	material_cod NVARCHAR(100) NOT NULL,
-    material_descripcion NVARCHAR(255) NOT NULL,
-    precio DECIMAL(18, 2) NOT NULL,
+    	material_descripcion NVARCHAR(255) NOT NULL,
+    	precio DECIMAL(18, 2) NOT NULL,
 )
 
 CREATE TABLE los_desnormalizados.Tipo_tarea (
@@ -82,10 +82,10 @@ CREATE TABLE los_desnormalizados.Tipo_tarea (
 )
 
 CREATE TABLE  los_desnormalizados.Tarea (
-    tarea_id INT PRIMARY KEY,
-    tipo_tarea_id INT NOT NULL,
-    tiempo_estimado INT NOT NULL, 
-    descripcion NVARCHAR(255) NOT NULL,
+    	tarea_id INT PRIMARY KEY,
+    	tipo_tarea_id INT NOT NULL,
+    	tiempo_estimado INT NOT NULL, 
+    	descripcion NVARCHAR(255) NOT NULL,
 	FOREIGN KEY (tipo_tarea_id) REFERENCES los_desnormalizados.Tipo_tarea (tipo_tarea_id)
 )
 
@@ -158,25 +158,25 @@ CREATE TABLE los_desnormalizados.Mecanico(
 
 CREATE TABLE los_desnormalizados.Tarea_x_orden(
 	tarea_x_orden_id INT IDENTITY(1,1) PRIMARY KEY,
-    orden_id INT NOT NULL,
-    tarea_id INT NOT NULL,
-    mecanico_id INT NOT NULL,
-    inicio_planificado DATETIME2 NOT NULL,
-    inicio_real DATETIME2 NULL,
-    fin_real DATETIME2 NULL,
+    	orden_id INT NOT NULL,
+    	tarea_id INT NOT NULL,
+    	mecanico_id INT NOT NULL,
+    	inicio_planificado DATETIME2 NOT NULL,
+   	inicio_real DATETIME2 NULL,
+    	fin_real DATETIME2 NULL,
 	tiempo_real INT NULL,
-    FOREIGN KEY (tarea_id) references los_desnormalizados.Tarea (tarea_id),
-    FOREIGN KEY (mecanico_id) references los_desnormalizados.Mecanico (legajo),
-    FOREIGN KEY (orden_id) references  los_desnormalizados.Orden_trabajo (orden_id)
+    	FOREIGN KEY (tarea_id) references los_desnormalizados.Tarea (tarea_id),
+    	FOREIGN KEY (mecanico_id) references los_desnormalizados.Mecanico (legajo),
+    	FOREIGN KEY (orden_id) references  los_desnormalizados.Orden_trabajo (orden_id)
 )
 
 CREATE TABLE  los_desnormalizados.Material_x_tarea(
-    material_id INT NOT NULL,
-    tarea_id INT NOT NULL, 
+    	material_id INT NOT NULL,
+    	tarea_id INT NOT NULL, 
 	cant_material INT NOT NULL,
 	PRIMARY KEY (material_id, tarea_id),
-    FOREIGN KEY (material_id) REFERENCES  los_desnormalizados.Material (material_id),
-    FOREIGN KEY (tarea_id) REFERENCES  los_desnormalizados.Tarea (tarea_id)
+    	FOREIGN KEY (material_id) REFERENCES  los_desnormalizados.Material (material_id),
+    	FOREIGN KEY (tarea_id) REFERENCES  los_desnormalizados.Tarea (tarea_id)
 )
 
 
@@ -209,7 +209,6 @@ INSERT INTO los_desnormalizados.Recorrido (ciudad_origen_id, ciudad_destino_id, 
 
 
 -- Tipo Paquete
-
 INSERT INTO los_desnormalizados.Tipo_paquete (paquete_descripcion, paquete_largo_max,
 		paquete_peso_max, paquete_ancho_max, paquete_precio, paquete_alto_max)
 	SELECT DISTINCT PAQUETE_DESCRIPCION, PAQUETE_LARGO_MAX, PAQUETE_PESO_MAX, PAQUETE_ANCHO_MAX, 
@@ -280,7 +279,6 @@ INSERT INTO los_desnormalizados.Viaje (camion_id, recorrido_id, chofer, fecha_in
 
 
 -- Paquete
--- TODO: Agregar precio total del paquete (Precio Unitario * Cantidad)
 INSERT INTO los_desnormalizados.Paquete (tipo_paquete_id)
 	SELECT tipo_paquete_id FROM los_desnormalizados.Tipo_paquete
 
