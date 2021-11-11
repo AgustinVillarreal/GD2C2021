@@ -6,6 +6,18 @@ IF EXISTS(SELECT [name] FROM sys.objects WHERE [name] = 'getAgeRange')
 	DROP FUNCTION los_desnormalizados.getAgeRange
 
 --DROP PREVENTIVO DE TABLAS------------------------------------------------------------
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_CAMION')
+DROP TABLE  los_desnormalizados.BI_DIM_CAMION
+
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_TIEMPO')
+DROP TABLE  los_desnormalizados.BI_DIM_TIEMPO
+
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MODELO')
+DROP TABLE  los_desnormalizados.BI_DIM_MODELO
+
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MARCA')
+DROP TABLE  los_desnormalizados.BI_DIM_MARCA
+
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_TALLER')
 DROP TABLE  los_desnormalizados.BI_DIM_TALLER
 
@@ -56,6 +68,53 @@ END
 GO
 
 --Creación y migración de las tablas de las dimensiones
+
+
+--DIMENSION TIEMPO 
+CREATE TABLE los_desnormalizados.BI_DIM_TIEMPO(
+	id_tiempo INT IDENTITY(1,1) PRIMARY KEY,
+	anio SMALLDATETIME,
+	cuatrimestre INT 
+)
+
+--DE DONDE SACAMOS LA FECHA? ~(°-°~) ~(°-°)~ (~°-°)~ 
+--INSERT INTO los_desnormalizados.BI_DIM_TIEMPO (anio, cuatrimestre)
+	--SELECT year(fecha), quarter(fecha) from los_desnormalizados.
+
+--DIMENSION CAMION
+CREATE TABLE los_desnormalizados.BI_DIM_CAMION (
+
+	camion_id INT IDENTITY(1,1) PRIMARY KEY, 
+	patente NVARCHAR(255) NOT NULL,
+	chasis NVARCHAR(255) NOT NULL,
+	motor NVARCHAR(255) NOT NULL,
+	fecha_alta DATETIME2(3) NOT NULL
+)
+
+INSERT INTO los_desnormalizados.BI_DIM_CAMION( patente, chasis, motor,fecha_alta)
+	SELECT patente, chasis, motor, fecha_alta from los_desnormalizados.Camion
+
+
+--DIMENSION MARCA
+CREATE TABLE los_desnormalizados.BI_DIM_MARCA(
+	marca_id INT IDENTITY(1,1) PRIMARY KEY,
+	nombre NVARCHAR(255) NOT NULL
+)
+
+INSERT INTO los_desnormalizados.BI_DIM_MARCA(nombre)
+	SELECT nombre from los_desnormalizados.Marca
+
+--DIMENSION MODELO
+CREATE TABLE los_desnormalizados.BI_DIM_MODELO(
+	modelo_id INT IDENTITY(1,1) PRIMARY KEY,
+	modelo_descripcion NVARCHAR(255) NOT NULL,
+	velocidad_max INT NOT NULL,
+	capacidad_tanque INT NOT NULL,
+	capacidad_carga INT NOT NULL
+)
+
+INSERT INTO los_desnormalizados.BI_DIM_MODELO(modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga)
+	SELECT modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga FROM los_desnormalizados.Modelo
 
 --DIMENSION TALLER
 CREATE TABLE los_desnormalizados.BI_DIM_TALLER(
@@ -140,6 +199,9 @@ CREATE TABLE los_desnormalizados.BI_DIM_MATERIAL (
 
 INSERT INTO los_desnormalizados.BI_DIM_MATERIAL (material_id, material_cod, material_descripcion, precio)
 	SELECT material_id, material_cod, material_descripcion, precio FROM los_desnormalizados.Material
+
+
+
 
 
 --Creación y migración de las tablas de hechos
