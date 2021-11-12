@@ -223,7 +223,7 @@ CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
 )
 
 INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_arreglo)
-	SELECT bt.taller_id, modelo.modelo_id, txo.tarea_id, cami.camion_id, bm.legajo, marca_id, bti.tiempo_id, tiempo_real
+	SELECT DISTINCT bt.taller_id, modelo.modelo_id, txo.tarea_id, cami.camion_id, bm.legajo, marca_id, bti.tiempo_id, tiempo_real
 	FROM los_desnormalizados.Tarea_x_orden txo
 	JOIN los_desnormalizados.BI_DIM_MECANICO bm on bm.legajo = txo.mecanico_id
 	JOIN los_desnormalizados.Mecanico m on m.legajo = bm.legajo
@@ -232,4 +232,24 @@ INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, ta
 	JOIN los_desnormalizados.Camion cami on cami.camion_id = ot.camion_id
 	JOIN los_desnormalizados.Modelo modelo on modelo.modelo_id = cami.modelo_id  
 	JOIN los_desnormalizados.BI_DIM_TIEMPO bti on bti.anio = year(txo.inicio_real) and bti.cuatrimestre = DATEPART(quarter,txo.inicio_real)
+	ORDER BY taller_id, modelo_id, tarea_id, camion_id, marca_id, tiempo_id
+
+CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
+	viaje_id INT,
+	legajo INT, 
+	camion_id INT,
+	paquete_id INT,
+	tipo_paquete_id INT,
+	recorrido_id INT
+	PRIMARY KEY (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id)
+)
+
+INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id)
+	SELECT DISTINCT v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id
+	FROM los_desnormalizados.Viaje_x_paquete vxp
+	JOIN los_desnormalizados.Viaje v ON vxp.viaje_id = v.viaje_id
+	JOIN los_desnormalizados.BI_DIM_CAMION bc ON v.camion_id = bc.camion_id
+	JOIN los_desnormalizados.BI_DIM_CHOFER bcho ON v.chofer = bcho.legajo
+	JOIN los_desnormalizados.BI_DIM_RECORRIDO brr ON v.recorrido_id = brr.recorrido_id
+	JOIN los_desnormalizados.Paquete p ON vxp.paquete_id = p.paquete_id
 
