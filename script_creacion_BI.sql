@@ -33,6 +33,9 @@ DROP TABLE  los_desnormalizados.BI_DIM_CHOFER
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MECANICO')
 DROP TABLE  los_desnormalizados.BI_DIM_MECANICO
 
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_ARREGLO_CAMION')
+DROP TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION
+
 --CREACIÓN DE FUNCIONES AUXILIARES------------------------------------------------------------
 GO
 CREATE FUNCTION los_desnormalizados.getAgeRange (@dateofbirth datetime2(3)) --Recibe una fecha de nacimiento por parámetro y 
@@ -72,14 +75,16 @@ GO
 
 --DIMENSION TIEMPO 
 CREATE TABLE los_desnormalizados.BI_DIM_TIEMPO(
-	id_tiempo INT IDENTITY(1,1) PRIMARY KEY,
+	tiempo_id INT IDENTITY(1,1) PRIMARY KEY,
 	anio SMALLDATETIME,
 	cuatrimestre INT 
 )
 
 --DE DONDE SACAMOS LA FECHA? ~(°-°~) ~(°-°)~ (~°-°)~ 
---INSERT INTO los_desnormalizados.BI_DIM_TIEMPO (anio, cuatrimestre)
-	--SELECT year(fecha), quarter(fecha) from los_desnormalizados.
+INSERT INTO los_desnormalizados.BI_DIM_TIEMPO (anio, cuatrimestre)
+	SELECT year(inicio_real), DATEPART(quarter,inicio_real) from los_desnormalizados.Tarea_x_orden
+	UNION 
+	SELECT year(fin_real), DATEPART(quarter,fin_real) from los_desnormalizados.Tarea_x_orden
 
 --DIMENSION CAMION
 CREATE TABLE los_desnormalizados.BI_DIM_CAMION (
@@ -205,16 +210,26 @@ INSERT INTO los_desnormalizados.BI_DIM_MATERIAL (material_id, material_cod, mate
 
 
 --Creación y migración de las tablas de hechos
-
-
--- TABLA DE HECHO: MATERIAL_TALLER
-CREATE TABLE los_desnormalizados.BI_FACT_MATERIAL_TALLER(
-    material_id INT REFERENCES los_desnormalizados.BI_DIM_MATERIAL,
-	taller_id INT REFERENCES los_desnormalizados.BI_DIM_TALLER,
-	cantidad INT NOT NULL,
-	PRIMARY KEY(material_id, taller_id)
+CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
+	taller_id int,
+	modelo_id int,
+	tarea_id int,
+	camion_id int,
+	mecanico_legajo int,
+	marca_id int,
+	tiempo_id int,
+	tiempo_arreglo int, 
+	PRIMARY KEY (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_arreglo)
 )
-/*
-INSERT INTO los_desnormalizados.BI_FACT_MATERIAL_TALLER (material_id, taller_id, cantidad) 
-	SELECT material_id, taller_id,
-*/
+
+INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_arreglo)
+	SELECT bt.taller_id, modelo.modelo_id, txo.tarea_id, cami.camion_id, bm.legajo, marca_id, bti.tiempo_id, tiempo_real
+	FROM los_desnormalizados.Tarea_x_orden txo
+	JOIN los_desnormalizados.BI_DIM_MECANICO bm on bm.legajo = txo.mecanico_id
+	JOIN los_desnormalizados.Mecanico m on m.legajo = bm.legajo
+	JOIN los_desnormalizados.BI_DIM_TALLER bt on m.taller_id = bt.taller_id
+	JOIN los_desnormalizados.Orden_trabajo ot on ot.orden_id = txo.orden_id 
+	JOIN los_desnormalizados.Camion cami on cami.camion_id = ot.camion_id
+	JOIN los_desnormalizados.Modelo modelo on modelo.modelo_id = cami.modelo_id  
+	JOIN los_desnormalizados.BI_DIM_TIEMPO bti on bti.anio = year(txo.inicio_real) and bti.cuatrimestre = DATEPART(quarter,txo.inicio_real)
+
