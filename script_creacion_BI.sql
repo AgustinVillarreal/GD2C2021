@@ -33,9 +33,14 @@ DROP TABLE  los_desnormalizados.BI_DIM_CHOFER
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MECANICO')
 DROP TABLE  los_desnormalizados.BI_DIM_MECANICO
 
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MATERIAL')
+DROP TABLE  los_desnormalizados.BI_DIM_MATERIAL
+
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_ARREGLO_CAMION')
 DROP TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION
 
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_INFO_VIAJE')
+DROP TABLE los_desnormalizados.BI_FACT_INFO_VIAJE
 --CREACIÓN DE FUNCIONES AUXILIARES------------------------------------------------------------
 GO
 CREATE FUNCTION los_desnormalizados.getAgeRange (@dateofbirth datetime2(3)) --Recibe una fecha de nacimiento por parámetro y 
@@ -206,9 +211,6 @@ INSERT INTO los_desnormalizados.BI_DIM_MATERIAL (material_id, material_cod, mate
 	SELECT material_id, material_cod, material_descripcion, precio FROM los_desnormalizados.Material
 
 
-
-
-
 --Creación y migración de las tablas de hechos
 CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
 	taller_id int,
@@ -218,12 +220,15 @@ CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
 	mecanico_legajo int,
 	marca_id int,
 	tiempo_id int,
+	tiempo_plani int,
 	tiempo_arreglo int, 
-	PRIMARY KEY (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_arreglo)
+	cant_materiales int, 
+	material_id nvarchar(100),
+	--PRIMARY KEY (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_arreglo)
 )
 
-INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_arreglo)
-	SELECT DISTINCT bt.taller_id, modelo.modelo_id, txo.tarea_id, cami.camion_id, bm.legajo, marca_id, bti.tiempo_id, tiempo_real
+INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_plani, tiempo_arreglo, cant_materiales, material_id)
+	SELECT DISTINCT bt.taller_id, modelo.modelo_id, txo.tarea_id, cami.camion_id, bm.legajo, marca_id, bti.tiempo_id, tar.tiempo_estimado, tiempo_real, mate.cant_material, ma.material_cod
 	FROM los_desnormalizados.Tarea_x_orden txo
 	JOIN los_desnormalizados.BI_DIM_MECANICO bm on bm.legajo = txo.mecanico_id
 	JOIN los_desnormalizados.Mecanico m on m.legajo = bm.legajo
@@ -232,6 +237,9 @@ INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, ta
 	JOIN los_desnormalizados.Camion cami on cami.camion_id = ot.camion_id
 	JOIN los_desnormalizados.Modelo modelo on modelo.modelo_id = cami.modelo_id  
 	JOIN los_desnormalizados.BI_DIM_TIEMPO bti on bti.anio = year(txo.inicio_real) and bti.cuatrimestre = DATEPART(quarter,txo.inicio_real)
+	JOIN los_desnormalizados.Tarea tar on txo.tarea_id = tar.tarea_id 
+	JOIN los_desnormalizados.Material_x_tarea mate on mate.tarea_id = tar.tarea_id  
+	JOIN los_desnormalizados.Material ma on ma.material_id = mate.material_id
 	ORDER BY taller_id, modelo_id, tarea_id, camion_id, marca_id, tiempo_id
 
 CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
@@ -240,8 +248,8 @@ CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
 	camion_id INT,
 	paquete_id INT,
 	tipo_paquete_id INT,
-	recorrido_id INT
-	PRIMARY KEY (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id)
+	recorrido_id INT, 
+	--PRIMARY KEY (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id)
 )
 
 INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id)
@@ -253,3 +261,31 @@ INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_i
 	JOIN los_desnormalizados.BI_DIM_RECORRIDO brr ON v.recorrido_id = brr.recorrido_id
 	JOIN los_desnormalizados.Paquete p ON vxp.paquete_id = p.paquete_id
 
+
+-- VISTAS 
+/*Máximo tiempo fuera de servicio de cada camión por cuatrimestre 
+Se entiende por fuera de servicio cuando el camión está en el taller (tiene 
+una OT) y no se encuentra disponible para un viaje. */
+
+CREATE VIEW los_desnormalizados.BI_TIEMPO_FUERA_SERVICIO
+AS 
+	SELECT bac.camion_id, bti.cuatrimestre, max(bac.tiempo_arreglo) 
+	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac
+	join los_desnormalizados.BI_DIM_TIEMPO bti on bti.tiempo_id = bac.tiempo_id
+	group by  bti.cuatrimestre, bac.camion_id
+GO
+
+
+
+--Desvío promedio de cada tarea x taller (dif entre planificacion y ejecucion)
+
+CREATE VIEW los_desnormalizados.BI_DESVIO_TAREA
+AS
+
+	SELECT taller_id, tarea_id, AVG(ABS(tiempo_arreglo-tiempo_plani))
+	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION 
+	group by taller_id, tarea_id
+
+GO
+
+-- Los 10 materiales más utilizados por taller CREATE VIEW los_desnormalizados.BI_10_MAS_USADOSAS	SELECT cami.material_id  , cami.taller_id	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION cami	WHERE material_id in (SELECT TOP 10 material_id							FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION							where cami.taller_id = taller_id							group by material_id							order by sum(cant_materiales) desc)	group by taller_id, material_idGO--Costo promedio x rango etario de choferes. CREATE VIEW los_desnormalizados.BI_COSTO_CHOFERESAS	SELECT (SELECT SUM(costo_hora)				from los_desnormalizados.BI_DIM_CHOFER				where rango_edad = bcho.rango_edad)/ count(distinct bcho.legajo), bcho.rango_edad	FROM los_desnormalizados.BI_FACT_INFO_VIAJE bvi	JOIN los_desnormalizados.BI_DIM_CHOFER bcho on bcho.legajo = bvi.legajo 	group by bcho.rango_edadGO
