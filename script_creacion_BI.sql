@@ -27,6 +27,9 @@ DROP TABLE  los_desnormalizados.BI_DIM_RECORRIDO
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_TIPO_TAREA')
 DROP TABLE  los_desnormalizados.BI_DIM_TIPO_TAREA
 
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_TAREA')
+DROP TABLE  los_desnormalizados.BI_DIM_TAREA
+
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_CHOFER')
 DROP TABLE  los_desnormalizados.BI_DIM_CHOFER
 
@@ -36,11 +39,15 @@ DROP TABLE  los_desnormalizados.BI_DIM_MECANICO
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MATERIAL')
 DROP TABLE  los_desnormalizados.BI_DIM_MATERIAL
 
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_VIAJE_X_PAQUETE')
+DROP TABLE los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE
+
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_ARREGLO_CAMION')
 DROP TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION
 
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_INFO_VIAJE')
 DROP TABLE los_desnormalizados.BI_FACT_INFO_VIAJE
+
 --CREACIÓN DE FUNCIONES AUXILIARES------------------------------------------------------------
 GO
 CREATE FUNCTION los_desnormalizados.getAgeRange (@dateofbirth datetime2(3)) --Recibe una fecha de nacimiento por parámetro y 
@@ -94,16 +101,15 @@ INSERT INTO los_desnormalizados.BI_DIM_TIEMPO (anio, cuatrimestre)
 --DIMENSION CAMION
 CREATE TABLE los_desnormalizados.BI_DIM_CAMION (
 
-	camion_id INT IDENTITY(1,1) PRIMARY KEY, 
+	camion_id INT PRIMARY KEY, 
 	patente NVARCHAR(255) NOT NULL,
 	chasis NVARCHAR(255) NOT NULL,
 	motor NVARCHAR(255) NOT NULL,
 	fecha_alta DATETIME2(3) NOT NULL
 )
 
-INSERT INTO los_desnormalizados.BI_DIM_CAMION( patente, chasis, motor,fecha_alta)
-	SELECT patente, chasis, motor, fecha_alta from los_desnormalizados.Camion
-
+INSERT INTO los_desnormalizados.BI_DIM_CAMION(camion_id, patente, chasis, motor,fecha_alta)
+	SELECT camion_id, patente, chasis, motor, fecha_alta from los_desnormalizados.Camion
 
 --DIMENSION MARCA
 CREATE TABLE los_desnormalizados.BI_DIM_MARCA(
@@ -116,15 +122,15 @@ INSERT INTO los_desnormalizados.BI_DIM_MARCA(nombre)
 
 --DIMENSION MODELO
 CREATE TABLE los_desnormalizados.BI_DIM_MODELO(
-	modelo_id INT IDENTITY(1,1) PRIMARY KEY,
+	modelo_id INT PRIMARY KEY,
 	modelo_descripcion NVARCHAR(255) NOT NULL,
 	velocidad_max INT NOT NULL,
 	capacidad_tanque INT NOT NULL,
 	capacidad_carga INT NOT NULL
 )
 
-INSERT INTO los_desnormalizados.BI_DIM_MODELO(modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga)
-	SELECT modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga FROM los_desnormalizados.Modelo
+INSERT INTO los_desnormalizados.BI_DIM_MODELO(modelo_id, modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga)
+	SELECT modelo_id, modelo_descripcion, velocidad_max, capacidad_tanque, capacidad_carga FROM los_desnormalizados.Modelo
 
 --DIMENSION TALLER
 CREATE TABLE los_desnormalizados.BI_DIM_TALLER(
@@ -227,40 +233,42 @@ CREATE TABLE los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE (
 INSERT INTO los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE (viaje_id, paquete_id, cantidad, precioTotal)
 	SELECT viaje_id, paquete_id, cantidad, precioTotal FROM los_desnormalizados.Viaje_x_paquete
 
-/*
---DIMENSION TAREA (Agregada) Tiene desnormalizado el tipo_tarea
+
+--DIMENSION TAREA 
 CREATE TABLE los_desnormalizados.BI_DIM_TAREA (
 	tarea_id INT PRIMARY KEY,
-	descripcion NVARCHAR(100) NOT NULL,
-	tipo_tarea NVARCHAR(100)
+	descripcion NVARCHAR(100) NOT NULL
 )
 
-INSERT INTO los_desnormalizados.BI_DIM_TAREA (tarea_id, descripcion, tipo_tarea)
-	SELECT tarea_id, t.descripcion, tt.descripcion 
+INSERT INTO los_desnormalizados.BI_DIM_TAREA (tarea_id, descripcion)
+	SELECT tarea_id, t.descripcion
 	FROM los_desnormalizados.Tarea t
-	JOIN los_desnormalizados.Tipo_tarea tt ON tt.tipo_tarea_id = t.tipo_tarea_id
-	*/
+	
 
 --Creación y migración de las tablas de hechos
 CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
 	taller_id int,
 	modelo_id int,
 	tarea_id int,
+	tipo_tarea_id int, 
 	camion_id int,
 	mecanico_legajo int,
 	marca_id int,
 	tiempo_id int,
 	tiempo_plani int,
 	tiempo_arreglo int, 
-	cant_materiales int, 
-	--Cambiamos el tipo y agregamos las PK
+	cant_materiales int,
 	material_id int,
-	PRIMARY KEY (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, material_id)
+	costo_mantenimiento DECIMAL (18,2)
+	PRIMARY KEY (taller_id, modelo_id, tarea_id, tipo_tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, material_id)
 )
 
---TODO: Cambiamos esto
-INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, tiempo_plani, tiempo_arreglo, cant_materiales, material_id)
-	SELECT DISTINCT bt.taller_id, modelo.modelo_id, txo.tarea_id, cami.camion_id, bm.legajo, marca_id, bti.tiempo_id, tar.tiempo_estimado, tiempo_real, mate.cant_material, ma.material_id
+INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, tarea_id, tipo_tarea_id, camion_id, mecanico_legajo, 
+				marca_id, tiempo_id, tiempo_plani, tiempo_arreglo, cant_materiales, material_id, costo_mantenimiento)
+	SELECT DISTINCT bt.taller_id, modelo.modelo_id, txo.tarea_id, tar.tipo_tarea_id, cami.camion_id, bm.legajo, marca_id, 
+			bti.tiempo_id, tar.tiempo_estimado, tiempo_real, mate.cant_material, ma.material_id, 
+				(SELECT SUM(bdm.precio) + SUM(bm.costo_hora)*tiempo_real*8  FROM los_desnormalizados.BI_DIM_MATERIAL bdm 
+					where bdm.material_id = ma.material_id)
 	FROM los_desnormalizados.Tarea_x_orden txo
 	JOIN los_desnormalizados.BI_DIM_MECANICO bm on bm.legajo = txo.mecanico_id
 	JOIN los_desnormalizados.Mecanico m on m.legajo = bm.legajo
@@ -269,10 +277,12 @@ INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, ta
 	JOIN los_desnormalizados.Camion cami on cami.camion_id = ot.camion_id
 	JOIN los_desnormalizados.Modelo modelo on modelo.modelo_id = cami.modelo_id  
 	JOIN los_desnormalizados.BI_DIM_TIEMPO bti on bti.anio = year(txo.inicio_real) and bti.cuatrimestre = DATEPART(quarter,txo.inicio_real)
-	JOIN los_desnormalizados.Tarea tar on txo.tarea_id = tar.tarea_id 
-	JOIN los_desnormalizados.Material_x_tarea mate on mate.tarea_id = tar.tarea_id  
+	JOIN los_desnormalizados.BI_DIM_TAREA dt on txo.tarea_id = dt.tarea_id 
+	JOIN los_desnormalizados.Tarea tar ON tar.tarea_id = dt.tarea_id
+	JOIN los_desnormalizados.Material_x_tarea mate on mate.tarea_id = dt.tarea_id  
 	JOIN los_desnormalizados.Material ma on ma.material_id = mate.material_id
-	ORDER BY taller_id, modelo_id, tarea_id, camion_id, marca_id, tiempo_id
+	GROUP BY bt.taller_id, modelo.modelo_id, txo.tarea_id, tar.tipo_tarea_id, cami.camion_id, bm.legajo, marca_id, 
+			bti.tiempo_id, tar.tiempo_estimado, tiempo_real, mate.cant_material, ma.material_id
 
 CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
 	viaje_id INT,
@@ -283,12 +293,16 @@ CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
 	recorrido_id INT, 
 	tiempo_id INT,
 	duracion_viaje INT,
-	costo_combustible INT,
+	ingresos DECIMAL(18,2),
+	costo DECIMAL(18,2)
 	PRIMARY KEY (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, tiempo_id)
 )
 
-INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, tiempo_id, duracion_viaje, costo_combustible)
-	SELECT DISTINCT v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id, bti.tiempo_id, DATEDIFF(D, v.fecha_fin, v.fecha_fin), v.lts_combustible * 100
+INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, 
+		tiempo_id, duracion_viaje, costo_combustible, ingresos, costo)
+	SELECT DISTINCT v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id, bti.tiempo_id, 
+		DATEDIFF(D, v.fecha_fin, v.fecha_fin), ingresosssss, (SELECT SUM(costo_hora)*duracion_viaje*8
+				FROM los_desnormalizados.BI_DIM_CHOFER bdc WHERE bdc.legajo = bcho.legajo)
 	FROM los_desnormalizados.Viaje_x_paquete vxp
 	JOIN los_desnormalizados.Viaje v ON vxp.viaje_id = v.viaje_id
 	JOIN los_desnormalizados.BI_DIM_CAMION bc ON v.camion_id = bc.camion_id
@@ -305,28 +319,26 @@ una OT) y no se encuentra disponible para un viaje. */
 
 CREATE VIEW los_desnormalizados.BI_TIEMPO_FUERA_SERVICIO
 AS 
-	SELECT bac.camion_id, bti.cuatrimestre, max(bac.tiempo_arreglo) 
+	SELECT bc.patente, bti.cuatrimestre, max(bac.tiempo_arreglo) as tiempo_fuera_de_servicio
 	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac
 	join los_desnormalizados.BI_DIM_TIEMPO bti on bti.tiempo_id = bac.tiempo_id
-	group by  bti.cuatrimestre, bac.camion_id
+	JOIN los_desnormalizados.BI_DIM_CAMION bc ON bc.camion_id = bac.camion_id
+	group by  bti.cuatrimestre, bac.camion_id, bc.patente
 GO
 
 --Desvío promedio de cada tarea x taller (dif entre planificacion y ejecucion)
 
 CREATE VIEW los_desnormalizados.BI_DESVIO_TAREA
 AS
-
-	SELECT taller_id, tarea_id, AVG(ABS(tiempo_arreglo-tiempo_plani))
+	SELECT taller_id, tarea_id, AVG(ABS(tiempo_arreglo-tiempo_plani)) as desvio_promedio
 	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION 
 	group by taller_id, tarea_id
-
 GO
 
 -- Los 10 materiales más utilizados por taller 
 CREATE VIEW los_desnormalizados.BI_10_MAS_USADOS
 AS
-
-	SELECT cami.material_id  , cami.taller_id
+	SELECT cami.material_id, cami.taller_id
 	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION cami
 	WHERE material_id in (SELECT TOP 10 material_id
 							FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION
@@ -334,7 +346,6 @@ AS
 							group by material_id
 							order by sum(cant_materiales) desc)
 	group by taller_id, material_id
-
 GO
 
 --Costo promedio x rango etario de choferes. 
@@ -343,11 +354,10 @@ CREATE VIEW los_desnormalizados.BI_COSTO_CHOFERES
 AS
 	SELECT (SELECT SUM(costo_hora)
 				from los_desnormalizados.BI_DIM_CHOFER
-				where rango_edad = bcho.rango_edad)/ count(distinct bcho.legajo), bcho.rango_edad
+				where rango_edad = bcho.rango_edad)/ count(distinct bcho.legajo) as costo_promedio, bcho.rango_edad
 	FROM los_desnormalizados.BI_FACT_INFO_VIAJE bvi
 	JOIN los_desnormalizados.BI_DIM_CHOFER bcho on bcho.legajo = bvi.legajo 
 	group by bcho.rango_edad
-
 GO
 
 /*Costo total de mantenimiento por camión, por taller, por cuatrimestre.
@@ -355,11 +365,15 @@ Se entiende por costo de mantenimiento el costo de materiales + el costo
 de mano de obra insumido en cada tarea (correctivas y preventivas)*/
 CREATE VIEW los_desnormalizados.BI_COSTO_MANTENIMIENTO
 AS
-	SELECT camion_id, taller_id, tiempo_id, (SELECT SUM(precio) 
+	SELECT bc.patente, bt.nombre, bdt.cuatrimestre, (SELECT SUM(precio) 
 				FROM los_desnormalizados.BI_DIM_MATERIAL bm WHERE bm.material_id = bac.material_id) 
-				+ (SELECT SUM(costo_hora)*tiempo_arreglo FROM los_desnormalizados.BI_MECANICO bm WHERE bm.legajo = bac.mecanico_legajo GROUP BY legajo)
-	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac 
-	GROUP BY camion_id, taller_id, tiempo_id, material_id, mecanico_legajo, tiempo_arreglo
+				+ (SELECT SUM(costo_hora)*tiempo_arreglo FROM los_desnormalizados.BI_DIM_MECANICO bm 
+				WHERE bm.legajo = bac.mecanico_legajo GROUP BY legajo) as costo_total
+	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac
+	JOIN los_desnormalizados.BI_DIM_CAMION bc ON bac.camion_id = bc.camion_id
+	JOIN los_desnormalizados.BI_DIM_TALLER bt ON bt.taller_id = bac.taller_id
+	JOIN los_desnormalizados.BI_DIM_TIEMPO bdt ON bdt.tiempo_id = bac.tiempo_id
+	GROUP BY bc.camion_id, bt.taller_id, material_id, mecanico_legajo, tiempo_arreglo, bc.patente, bt.nombre, bdt.cuatrimestre
 GO
 
 
@@ -368,8 +382,16 @@ GO
 
 CREATE VIEW los_desnormalizados.BI_TAREAS_MAS_REALIZADAS_X_MODELO
 AS
-	SELECT modelo_id, (SELECT TOP 5 FROM los_desnormalizados.BI_DIM_TIPO_TAREA) 
+	--SELECT modelo_id, (SELECT TOP 5 descripcion FROM los_desnormalizados.BI_DIM_TAREA dt WHERE dt.tarea_id = bac.tarea_id) 
+	SELECT bm.modelo_descripcion, dt.descripcion 
 	FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac
+	JOIN los_desnormalizados.BI_DIM_TAREA dt ON dt.tarea_id = bac.tarea_id
+	JOIN los_desnormalizados.BI_DIM_MODELO bm ON bm.modelo_id = bac.modelo_id
+	WHERE bac.tarea_id IN (SELECT TOP 5 bac2.tarea_id FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac2 
+								WHERE bac.modelo_id = bac2.modelo_id
+								GROUP BY bac2.tarea_id
+								ORDER BY SUM(bac2.tarea_id) DESC)
+	GROUP BY bm.modelo_descripcion, dt.descripcion 
 GO
 
 /*Facturación total por recorrido por cuatrimestre. (En función de la cantidad
@@ -379,7 +401,7 @@ CREATE VIEW los_desnormalizados.BI_FACTURACION_X_RECORRIDO
 AS
 	SELECT bdr.ciudad_origen, bdr.ciudad_destino, bdt.cuatrimestre ,(
 		SELECT SUM(precioTotal) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE vxp 
-		WHERE vxp.viaje_id = biv.viaje_id AND vxp.paquete_id = biv.paquete_id) 
+		WHERE vxp.viaje_id = biv.viaje_id AND vxp.paquete_id = biv.paquete_id) as facturacion_total
 		FROM los_desnormalizados.BI_FACT_INFO_VIAJE biv 
 		JOIN los_desnormalizados.BI_DIM_RECORRIDO bdr ON bdr.recorrido_id = biv.recorrido_id
 		JOIN los_desnormalizados.BI_DIM_TIEMPO bdt ON bdt.tiempo_id = biv.tiempo_id
@@ -396,18 +418,13 @@ obra.*/
 --TODO MAÑANA VER
 CREATE VIEW los_desnormalizados.BI_GANANCIA_X_CAMION
 AS
-	SELECT (SELECT SUM(precioTotal) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE bdvxp 
+	SELECT 
+	(SELECT SUM(precioTotal) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE bdvxp 
 			WHERE bdvxp.paquete_id = bip.paquete_id AND bdvxp.viaje_id = bip.viaje_id)
 			+ precio
-			- (SELECT SUM(costo_hora)*duracion_viaje*8
-				FROM los_desnormalizados.BI_DIM_CHOFER bdc WHERE bdc.legajo = bip.legajo) 
+			- () 
 			- bip.costo_combustible 
-			- (SELECT SUM(bdm.precio) + SUM(bm.costo_hora)*tiempo_arreglo*8 
-				FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac 
-				JOIN los_desnormalizados.BI_MECANICO bm ON bm.legajo = bac.mecanico_legajo
-				JOIN los_desnormalizados.BI_DIM_MATERIAL bdm ON bdm.material_id = bac.material_id
-				WHERE bip.camion_id = bac.camion_id
-				GROUP BY tiempo_arreglo
+			- (
 				)
 	FROM los_desnormalizados.BI_FACT_INFO_VIAJE bip
 	JOIN los_desnormalizados.BI_DIM_RECORRIDO bdr ON bdr.recorrido_id = bip.recorrido_id
