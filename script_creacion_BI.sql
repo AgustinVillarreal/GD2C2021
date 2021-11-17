@@ -298,10 +298,16 @@ CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
 	PRIMARY KEY (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, tiempo_id)
 )
 
+
 INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, 
-		tiempo_id, duracion_viaje, costo_combustible, ingresos, costo)
+		tiempo_id, duracion_viaje, ingresos, costo)
 	SELECT DISTINCT v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id, bti.tiempo_id, 
-		DATEDIFF(D, v.fecha_fin, v.fecha_fin), ingresosssss, (SELECT SUM(costo_hora)*duracion_viaje*8
+		DATEDIFF(D, v.fecha_fin, v.fecha_fin), 
+
+		(SELECT SUM(precioTotal)*vxp.cantidad + SUM(brr.precio) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE bdvxp 
+			WHERE bdvxp.paquete_id = p.paquete_id AND bdvxp.viaje_id = v.viaje_id), 
+
+		(SELECT SUM(costo_hora)*DATEDIFF(D, v.fecha_fin, v.fecha_fin)*8 + SUM(v.lts_combustible)*100
 				FROM los_desnormalizados.BI_DIM_CHOFER bdc WHERE bdc.legajo = bcho.legajo)
 	FROM los_desnormalizados.Viaje_x_paquete vxp
 	JOIN los_desnormalizados.Viaje v ON vxp.viaje_id = v.viaje_id
@@ -310,6 +316,8 @@ INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_i
 	JOIN los_desnormalizados.BI_DIM_RECORRIDO brr ON v.recorrido_id = brr.recorrido_id
 	JOIN los_desnormalizados.BI_DIM_TIEMPO bti on bti.anio = year(v.fecha_inicio) and bti.cuatrimestre = DATEPART(quarter,v.fecha_inicio)
 	JOIN los_desnormalizados.Paquete p ON vxp.paquete_id = p.paquete_id
+	GROUP BY v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id, bti.tiempo_id, 
+		DATEDIFF(D, v.fecha_fin, v.fecha_fin), vxp.cantidad
 
 
 -- VISTAS 
@@ -415,17 +423,14 @@ Tomar precio por lt de combustible $100.-
 o Costo de mantenimiento: costo de materiales + costo de mano de
 obra.*/
 
---TODO MAÑANA VER
+--TODO: Le agregue al subselect de ingresos SUM(precioTotal)*CANTIDAD (nos faltaba multiplicar con cantidad) si no lo haces queda todo negativo xd
+--Revisar pq me parece que esta mal
 CREATE VIEW los_desnormalizados.BI_GANANCIA_X_CAMION
 AS
-	SELECT 
-	(SELECT SUM(precioTotal) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE bdvxp 
-			WHERE bdvxp.paquete_id = bip.paquete_id AND bdvxp.viaje_id = bip.viaje_id)
-			+ precio
-			- () 
-			- bip.costo_combustible 
-			- (
-				)
+	SELECT bc.patente, SUM(bip.ingresos - bip.costo - bac.costo_mantenimiento)
 	FROM los_desnormalizados.BI_FACT_INFO_VIAJE bip
+	JOIN los_desnormalizados.BI_FACT_ARREGLO_CAMION bac ON bip.camion_id = bac.camion_id
+	JOIN los_desnormalizados.BI_DIM_CAMION bc ON bc.camion_id = bip.camion_id
 	JOIN los_desnormalizados.BI_DIM_RECORRIDO bdr ON bdr.recorrido_id = bip.recorrido_id
+	GROUP BY bc.patente
 GO
