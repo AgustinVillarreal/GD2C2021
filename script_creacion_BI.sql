@@ -39,14 +39,14 @@ DROP TABLE  los_desnormalizados.BI_DIM_MECANICO
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MATERIAL')
 DROP TABLE  los_desnormalizados.BI_DIM_MATERIAL
 
-IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_VIAJE_X_PAQUETE')
-DROP TABLE los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE
-
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_ARREGLO_CAMION')
 DROP TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION
 
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_INFO_VIAJE')
 DROP TABLE los_desnormalizados.BI_FACT_INFO_VIAJE
+
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_VIAJE')
+DROP TABLE los_desnormalizados.BI_DIM_VIAJE
 
 --CREACIÓN DE FUNCIONES AUXILIARES------------------------------------------------------------
 GO
@@ -221,19 +221,6 @@ CREATE TABLE los_desnormalizados.BI_DIM_MATERIAL (
 INSERT INTO los_desnormalizados.BI_DIM_MATERIAL (material_id, material_cod, material_descripcion, precio)
 	SELECT material_id, material_cod, material_descripcion, precio FROM los_desnormalizados.Material
 
---DIMENSION VIAJE_X_PAQUETE (Agregada)
-CREATE TABLE los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE (
-    viaje_id INT,
-	paquete_id INT,
-    cantidad INT NOT NULL,
-    precioTotal DECIMAL(18, 2) NOT NULL,
-	PRIMARY KEY (viaje_id, paquete_id)
-)
-
-INSERT INTO los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE (viaje_id, paquete_id, cantidad, precioTotal)
-	SELECT viaje_id, paquete_id, cantidad, precioTotal FROM los_desnormalizados.Viaje_x_paquete
-
-
 --DIMENSION TAREA 
 CREATE TABLE los_desnormalizados.BI_DIM_TAREA (
 	tarea_id INT PRIMARY KEY,
@@ -243,7 +230,18 @@ CREATE TABLE los_desnormalizados.BI_DIM_TAREA (
 INSERT INTO los_desnormalizados.BI_DIM_TAREA (tarea_id, descripcion)
 	SELECT tarea_id, t.descripcion
 	FROM los_desnormalizados.Tarea t
-	
+
+--DIMENSION VIAJE
+CREATE TABLE los_desnormalizados.BI_DIM_VIAJE(
+	viaje_id INT PRIMARY KEY,
+	fecha_inicio DATETIME2(7) NOT NULL,
+	fecha_fin DATETIME2(3) NOT NULL,
+	lts_combustible DECIMAL(18,2) NOT NULL
+)
+
+INSERT INTO los_desnormalizados.BI_DIM_VIAJE (viaje_id, fecha_inicio, fecha_fin, lts_combustible)
+	SELECT viaje_id, fecha_inicio, fecha_fin, lts_combustible
+	FROM los_desnormalizados.Viaje
 
 --Creación y migración de las tablas de hechos
 CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
@@ -255,10 +253,10 @@ CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
 	mecanico_legajo int,
 	marca_id int,
 	tiempo_id int,
+	material_id int,
 	tiempo_plani int,
 	tiempo_arreglo int, 
 	cant_materiales int,
-	material_id int,
 	costo_mantenimiento DECIMAL (18,2)
 	PRIMARY KEY (taller_id, modelo_id, tarea_id, tipo_tarea_id, camion_id, mecanico_legajo, marca_id, tiempo_id, material_id)
 )
@@ -284,47 +282,68 @@ INSERT INTO los_desnormalizados.BI_FACT_ARREGLO_CAMION (taller_id, modelo_id, ta
 	GROUP BY bt.taller_id, modelo.modelo_id, txo.tarea_id, tar.tipo_tarea_id, cami.camion_id, bm.legajo, marca_id, 
 			bti.tiempo_id, tar.tiempo_estimado, tiempo_real, mate.cant_material, ma.material_id
 
+-- FK HECHO ARREGLO
+ALTER TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION 
+ADD CONSTRAINT FK_BI_taller FOREIGN KEY (taller_id) REFERENCES los_desnormalizados.BI_DIM_TALLER(taller_id),
+	CONSTRAINT FK_BI_modelo FOREIGN KEY (modelo_id) REFERENCES los_desnormalizados.BI_DIM_MODELO(modelo_id),
+	CONSTRAINT FK_BI_tarea FOREIGN KEY (tarea_id) REFERENCES los_desnormalizados.BI_DIM_TAREA(tarea_id),
+	CONSTRAINT FK_BI_tipo_tarea FOREIGN KEY (tipo_tarea_id) REFERENCES los_desnormalizados.BI_DIM_TIPO_TAREA(tipo_tarea_id),
+	CONSTRAINT FK_BI_camion FOREIGN KEY (camion_id) REFERENCES los_desnormalizados.BI_DIM_CAMION(camion_id),
+	CONSTRAINT FK_BI_mecanico FOREIGN KEY (mecanico_legajo) REFERENCES los_desnormalizados.BI_DIM_MECANICO(legajo),
+	CONSTRAINT FK_BI_marca FOREIGN KEY (marca_id) REFERENCES los_desnormalizados.BI_DIM_MARCA(marca_id),
+	CONSTRAINT FK_BI_tiempo FOREIGN KEY (tiempo_id) REFERENCES los_desnormalizados.BI_DIM_TIEMPO(tiempo_id),
+	CONSTRAINT FK_BI_material FOREIGN KEY (material_id) REFERENCES los_desnormalizados.BI_DIM_MATERIAL(material_id)
+GO
+
 CREATE TABLE los_desnormalizados.BI_FACT_INFO_VIAJE (
-	viaje_id INT,
 	legajo INT, 
+	viaje_id INT,
 	camion_id INT,
-	paquete_id INT,
-	tipo_paquete_id INT,
 	recorrido_id INT, 
 	tiempo_id INT,
 	duracion_viaje INT,
 	ingresos DECIMAL(18,2),
 	costo DECIMAL(18,2)
-	PRIMARY KEY (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, tiempo_id)
+	PRIMARY KEY (legajo, viaje_id, camion_id, recorrido_id, tiempo_id)
 )
 
-
-INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (recorrido_id, tipo_paquete_id, viaje_id, camion_id, legajo, paquete_id, 
-		tiempo_id, duracion_viaje, ingresos, costo)
-	SELECT DISTINCT v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id, bti.tiempo_id, 
-		DATEDIFF(D, v.fecha_fin, v.fecha_fin), 
-
-		(SELECT SUM(precioTotal)*vxp.cantidad + SUM(brr.precio) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE bdvxp 
-			WHERE bdvxp.paquete_id = p.paquete_id AND bdvxp.viaje_id = v.viaje_id), 
-
-		(SELECT SUM(costo_hora)*DATEDIFF(D, v.fecha_fin, v.fecha_fin)*8 + SUM(v.lts_combustible)*100
-				FROM los_desnormalizados.BI_DIM_CHOFER bdc WHERE bdc.legajo = bcho.legajo)
-	FROM los_desnormalizados.Viaje_x_paquete vxp
-	JOIN los_desnormalizados.Viaje v ON vxp.viaje_id = v.viaje_id
+INSERT INTO los_desnormalizados.BI_FACT_INFO_VIAJE (viaje_id, recorrido_id, camion_id, legajo, tiempo_id, duracion_viaje, ingresos, costo)
+SELECT v.viaje_id, brr.recorrido_id, bc.camion_id, legajo, bti.tiempo_id, DATEDIFF(D, v.fecha_inicio, v.fecha_fin),
+	(SELECT SUM(vxp.precioTotal*vxp.cantidad) + brr.precio
+		FROM los_desnormalizados.Viaje_x_paquete vxp 
+		JOIN los_desnormalizados.Paquete p ON p.paquete_id = vxp.paquete_id
+		WHERE vxp.viaje_id = v.viaje_id),
+	SUM(costo_hora)*DATEDIFF(D, v.fecha_inicio, v.fecha_fin)*8 + SUM(v.lts_combustible)*100		
+	FROM los_desnormalizados.BI_DIM_VIAJE bdv
+	JOIN los_desnormalizados.Viaje v ON v.viaje_id = bdv.viaje_id
 	JOIN los_desnormalizados.BI_DIM_CAMION bc ON v.camion_id = bc.camion_id
 	JOIN los_desnormalizados.BI_DIM_CHOFER bcho ON v.chofer = bcho.legajo
 	JOIN los_desnormalizados.BI_DIM_RECORRIDO brr ON v.recorrido_id = brr.recorrido_id
 	JOIN los_desnormalizados.BI_DIM_TIEMPO bti on bti.anio = year(v.fecha_inicio) and bti.cuatrimestre = DATEPART(quarter,v.fecha_inicio)
-	JOIN los_desnormalizados.Paquete p ON vxp.paquete_id = p.paquete_id
-	GROUP BY v.recorrido_id, tipo_paquete_id, v.viaje_id, v.camion_id, legajo, p.paquete_id, bti.tiempo_id, 
-		DATEDIFF(D, v.fecha_fin, v.fecha_fin), vxp.cantidad
+	GROUP BY brr.recorrido_id, v.viaje_id, bc.camion_id, legajo, bti.tiempo_id, v.fecha_inicio, v.fecha_fin, brr.precio
+	ORDER BY 1,2,3,4,5,6,7
 
+ALTER TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION 
+ADD CONSTRAINT FK_BI_taller FOREIGN KEY (taller_id) REFERENCES los_desnormalizados.BI_DIM_TALLER(taller_id),
+	CONSTRAINT FK_BI_modelo FOREIGN KEY (modelo_id) REFERENCES los_desnormalizados.BI_DIM_MODELO(modelo_id),
+	CONSTRAINT FK_BI_tarea FOREIGN KEY (tarea_id) REFERENCES los_desnormalizados.BI_DIM_TAREA(tarea_id),
+	CONSTRAINT FK_BI_tipo_tarea FOREIGN KEY (tipo_tarea_id) REFERENCES los_desnormalizados.BI_DIM_TIPO_TAREA(tipo_tarea_id),
+	CONSTRAINT FK_BI_camion FOREIGN KEY (camion_id) REFERENCES los_desnormalizados.BI_DIM_CAMION(camion_id),
+	CONSTRAINT FK_BI_mecanico FOREIGN KEY (mecanico_legajo) REFERENCES los_desnormalizados.BI_DIM_MECANICO(legajo),
+	CONSTRAINT FK_BI_marca FOREIGN KEY (marca_id) REFERENCES los_desnormalizados.BI_DIM_MARCA(marca_id),
+	CONSTRAINT FK_BI_tiempo FOREIGN KEY (tiempo_id) REFERENCES los_desnormalizados.BI_DIM_TIEMPO(tiempo_id),
+	CONSTRAINT FK_BI_material FOREIGN KEY (material_id) REFERENCES los_desnormalizados.BI_DIM_MATERIAL(material_id)
+GO
 
 -- VISTAS 
 /*Máximo tiempo fuera de servicio de cada camión por cuatrimestre 
 Se entiende por fuera de servicio cuando el camión está en el taller (tiene 
 una OT) y no se encuentra disponible para un viaje. */
 
+
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_TIEMPO_FUERA_SERVICIO')
+DROP VIEW  los_desnormalizados.BI_TIEMPO_FUERA_SERVICIO
+GO
 CREATE VIEW los_desnormalizados.BI_TIEMPO_FUERA_SERVICIO
 AS 
 	SELECT bc.patente, bti.cuatrimestre, max(bac.tiempo_arreglo) as tiempo_fuera_de_servicio
@@ -336,6 +355,10 @@ GO
 
 --Desvío promedio de cada tarea x taller (dif entre planificacion y ejecucion)
 
+
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_DESVIO_TAREA')
+DROP VIEW  los_desnormalizados.BI_DESVIO_TAREA
+GO
 CREATE VIEW los_desnormalizados.BI_DESVIO_TAREA
 AS
 	SELECT taller_id, tarea_id, AVG(ABS(tiempo_arreglo-tiempo_plani)) as desvio_promedio
@@ -343,7 +366,11 @@ AS
 	group by taller_id, tarea_id
 GO
 
--- Los 10 materiales más utilizados por taller 
+-- Los 10 materiales más utilizados por taller
+
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_10_MAS_USADOS')
+DROP VIEW  los_desnormalizados.BI_10_MAS_USADOS
+GO
 CREATE VIEW los_desnormalizados.BI_10_MAS_USADOS
 AS
 	SELECT cami.material_id, cami.taller_id
@@ -358,6 +385,9 @@ GO
 
 --Costo promedio x rango etario de choferes. 
 
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_COSTO_CHOFERES')
+DROP VIEW  los_desnormalizados.BI_COSTO_CHOFERES
+GO
 CREATE VIEW los_desnormalizados.BI_COSTO_CHOFERES
 AS
 	SELECT (SELECT SUM(costo_hora)
@@ -371,6 +401,10 @@ GO
 /*Costo total de mantenimiento por camión, por taller, por cuatrimestre.
 Se entiende por costo de mantenimiento el costo de materiales + el costo
 de mano de obra insumido en cada tarea (correctivas y preventivas)*/
+
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_COSTO_MANTENIMIENTO')
+DROP VIEW  los_desnormalizados.BI_COSTO_MANTENIMIENTO
+GO
 CREATE VIEW los_desnormalizados.BI_COSTO_MANTENIMIENTO
 AS
 	SELECT bc.patente, bt.nombre, bdt.cuatrimestre, (SELECT SUM(precio) 
@@ -387,7 +421,9 @@ GO
 
 
 /*Las 5 tareas que más se realizan por modelo de camión.*/
-
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_TAREAS_MAS_REALIZADAS_X_MODELO')
+DROP VIEW  los_desnormalizados.BI_TAREAS_MAS_REALIZADAS_X_MODELO
+GO
 CREATE VIEW los_desnormalizados.BI_TAREAS_MAS_REALIZADAS_X_MODELO
 AS
 	--SELECT modelo_id, (SELECT TOP 5 descripcion FROM los_desnormalizados.BI_DIM_TAREA dt WHERE dt.tarea_id = bac.tarea_id) 
@@ -404,16 +440,18 @@ GO
 
 /*Facturación total por recorrido por cuatrimestre. (En función de la cantidad
 y tipo de paquetes que transporta el camión y el recorrido)*/
-
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_FACTURACION_X_RECORRIDO')
+DROP VIEW  los_desnormalizados.BI_FACTURACION_X_RECORRIDO
+GO
 CREATE VIEW los_desnormalizados.BI_FACTURACION_X_RECORRIDO
 AS
-	SELECT bdr.ciudad_origen, bdr.ciudad_destino, bdt.cuatrimestre ,(
-		SELECT SUM(precioTotal) FROM los_desnormalizados.BI_DIM_VIAJE_X_PAQUETE vxp 
-		WHERE vxp.viaje_id = biv.viaje_id AND vxp.paquete_id = biv.paquete_id) as facturacion_total
-		FROM los_desnormalizados.BI_FACT_INFO_VIAJE biv 
+	SELECT bdr.ciudad_origen, bdr.ciudad_destino, bdt.cuatrimestre, SUM(ingresos) as facturacion_total
+	FROM los_desnormalizados.BI_FACT_INFO_VIAJE biv 
 		JOIN los_desnormalizados.BI_DIM_RECORRIDO bdr ON bdr.recorrido_id = biv.recorrido_id
 		JOIN los_desnormalizados.BI_DIM_TIEMPO bdt ON bdt.tiempo_id = biv.tiempo_id
+	GROUP BY bdr.ciudad_origen, bdr.ciudad_destino, bdt.cuatrimestre
 GO
+
 
 /*Ganancia por camión (Ingresos – Costo de viaje – Costo de mantenimiento)
 o Ingresos: en función de la cantidad y tipo de paquetes que
@@ -425,12 +463,15 @@ obra.*/
 
 --TODO: Le agregue al subselect de ingresos SUM(precioTotal)*CANTIDAD (nos faltaba multiplicar con cantidad) si no lo haces queda todo negativo xd
 --Revisar pq me parece que esta mal
+IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_GANANCIA_X_CAMION')
+DROP VIEW  los_desnormalizados.BI_GANANCIA_X_CAMION
+GO
 CREATE VIEW los_desnormalizados.BI_GANANCIA_X_CAMION
 AS
-	SELECT bc.patente, SUM(bip.ingresos - bip.costo - bac.costo_mantenimiento)
+	SELECT bc.patente, SUM(bip.ingresos) - SUM(bip.costo) 
+	- (SELECT SUM(costo_mantenimiento) FROM los_desnormalizados.BI_FACT_ARREGLO_CAMION bac WHERE bip.camion_id = bac.camion_id) as ganancia
 	FROM los_desnormalizados.BI_FACT_INFO_VIAJE bip
-	JOIN los_desnormalizados.BI_FACT_ARREGLO_CAMION bac ON bip.camion_id = bac.camion_id
 	JOIN los_desnormalizados.BI_DIM_CAMION bc ON bc.camion_id = bip.camion_id
 	JOIN los_desnormalizados.BI_DIM_RECORRIDO bdr ON bdr.recorrido_id = bip.recorrido_id
-	GROUP BY bc.patente
+	GROUP BY bc.patente, bip.camion_id
 GO
