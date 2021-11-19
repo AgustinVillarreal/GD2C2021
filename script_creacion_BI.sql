@@ -39,14 +39,16 @@ DROP TABLE  los_desnormalizados.BI_DIM_MECANICO
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_MATERIAL')
 DROP TABLE  los_desnormalizados.BI_DIM_MATERIAL
 
+IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_VIAJE')
+DROP TABLE los_desnormalizados.BI_DIM_VIAJE
+
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_ARREGLO_CAMION')
 DROP TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION
 
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_FACT_INFO_VIAJE')
 DROP TABLE los_desnormalizados.BI_FACT_INFO_VIAJE
 
-IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_VIAJE')
-DROP TABLE los_desnormalizados.BI_DIM_VIAJE
+
 
 --CREACIÓN DE FUNCIONES AUXILIARES------------------------------------------------------------
 GO
@@ -324,11 +326,11 @@ SELECT v.viaje_id, brr.recorrido_id, bc.camion_id, legajo, bti.tiempo_id, DATEDI
 	ORDER BY 1,2,3,4,5,6,7
 
 ALTER TABLE los_desnormalizados.BI_FACT_INFO_VIAJE 
-ADD CONSTRAINT FK_BI_legajo FOREIGN KEY (legajo) REFERENCES los_desnormalizados.BI_DIM_MECANICO(legajo),
+ADD CONSTRAINT FK_BI_legajo FOREIGN KEY (legajo) REFERENCES los_desnormalizados.BI_DIM_CHOFER(legajo),
 	CONSTRAINT FK_BI_viaje FOREIGN KEY (viaje_id) REFERENCES los_desnormalizados.BI_DIM_VIAJE(viaje_id),
-	CONSTRAINT FK_BI_camion FOREIGN KEY (camion_id) REFERENCES los_desnormalizados.BI_DIM_CAMION(camion_id),
+	CONSTRAINT FK_BI_camion_viaje FOREIGN KEY (camion_id) REFERENCES los_desnormalizados.BI_DIM_CAMION(camion_id),
 	CONSTRAINT FK_BI_recorrido FOREIGN KEY (recorrido_id) REFERENCES los_desnormalizados.BI_DIM_RECORRIDO(recorrido_id),
-	CONSTRAINT FK_BI_tiempo FOREIGN KEY (tiempo_id) REFERENCES los_desnormalizados.BI_DIM_TIEMPO(tiempo_id),
+	CONSTRAINT FK_BI_tiempo_viaje FOREIGN KEY (tiempo_id) REFERENCES los_desnormalizados.BI_DIM_TIEMPO(tiempo_id)
 GO
 
 -- VISTAS 
