@@ -48,9 +48,9 @@ DROP TABLE los_desnormalizados.BI_FACT_INFO_VIAJE
 IF EXISTS(SELECT [name] FROM sys.tables WHERE [name] = 'BI_DIM_VIAJE')
 DROP TABLE los_desnormalizados.BI_DIM_VIAJE
 
---CREACIÓN DE FUNCIONES AUXILIARES------------------------------------------------------------
+--CREACIÃ“N DE FUNCIONES AUXILIARES------------------------------------------------------------
 GO
-CREATE FUNCTION los_desnormalizados.getAgeRange (@dateofbirth datetime2(3)) --Recibe una fecha de nacimiento por parámetro y 
+CREATE FUNCTION los_desnormalizados.getAgeRange (@dateofbirth datetime2(3)) --Recibe una fecha de nacimiento por parÃ¡metro y 
 RETURNS varchar(10)												   --devuelve la edad actual de la persona		
 AS
 BEGIN
@@ -82,7 +82,7 @@ END
 
 GO
 
---Creación y migración de las tablas de las dimensiones
+--CreaciÃ³n y migraciÃ³n de las tablas de las dimensiones
 
 
 --DIMENSION TIEMPO 
@@ -92,7 +92,7 @@ CREATE TABLE los_desnormalizados.BI_DIM_TIEMPO(
 	cuatrimestre INT 
 )
 
---DE DONDE SACAMOS LA FECHA? ~(°-°~) ~(°-°)~ (~°-°)~ 
+--DE DONDE SACAMOS LA FECHA? ~(Â°-Â°~) ~(Â°-Â°)~ (~Â°-Â°)~ 
 INSERT INTO los_desnormalizados.BI_DIM_TIEMPO (anio, cuatrimestre)
 	SELECT year(inicio_real), DATEPART(quarter,inicio_real) from los_desnormalizados.Tarea_x_orden
 	UNION 
@@ -243,7 +243,7 @@ INSERT INTO los_desnormalizados.BI_DIM_VIAJE (viaje_id, fecha_inicio, fecha_fin,
 	SELECT viaje_id, fecha_inicio, fecha_fin, lts_combustible
 	FROM los_desnormalizados.Viaje
 
---Creación y migración de las tablas de hechos
+--CreaciÃ³n y migraciÃ³n de las tablas de hechos
 CREATE TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION (
 	taller_id int,
 	modelo_id int,
@@ -324,20 +324,16 @@ SELECT v.viaje_id, brr.recorrido_id, bc.camion_id, legajo, bti.tiempo_id, DATEDI
 	ORDER BY 1,2,3,4,5,6,7
 
 ALTER TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION 
-ADD CONSTRAINT FK_BI_taller FOREIGN KEY (taller_id) REFERENCES los_desnormalizados.BI_DIM_TALLER(taller_id),
-	CONSTRAINT FK_BI_modelo FOREIGN KEY (modelo_id) REFERENCES los_desnormalizados.BI_DIM_MODELO(modelo_id),
-	CONSTRAINT FK_BI_tarea FOREIGN KEY (tarea_id) REFERENCES los_desnormalizados.BI_DIM_TAREA(tarea_id),
-	CONSTRAINT FK_BI_tipo_tarea FOREIGN KEY (tipo_tarea_id) REFERENCES los_desnormalizados.BI_DIM_TIPO_TAREA(tipo_tarea_id),
+ADD CONSTRAINT FK_BI_legajo FOREIGN KEY (legajo) REFERENCES los_desnormalizados.BI_DIM_MECANICO(legajo),
+	CONSTRAINT FK_BI_viaje FOREIGN KEY (viaje_id) REFERENCES los_desnormalizados.BI_DIM_VIAJE(viaje_id),
 	CONSTRAINT FK_BI_camion FOREIGN KEY (camion_id) REFERENCES los_desnormalizados.BI_DIM_CAMION(camion_id),
-	CONSTRAINT FK_BI_mecanico FOREIGN KEY (mecanico_legajo) REFERENCES los_desnormalizados.BI_DIM_MECANICO(legajo),
-	CONSTRAINT FK_BI_marca FOREIGN KEY (marca_id) REFERENCES los_desnormalizados.BI_DIM_MARCA(marca_id),
+	CONSTRAINT FK_BI_recorrido FOREIGN KEY (recorrido_id) REFERENCES los_desnormalizados.BI_DIM_RECORRIDO(recorrido_id),
 	CONSTRAINT FK_BI_tiempo FOREIGN KEY (tiempo_id) REFERENCES los_desnormalizados.BI_DIM_TIEMPO(tiempo_id),
-	CONSTRAINT FK_BI_material FOREIGN KEY (material_id) REFERENCES los_desnormalizados.BI_DIM_MATERIAL(material_id)
 GO
 
 -- VISTAS 
-/*Máximo tiempo fuera de servicio de cada camión por cuatrimestre 
-Se entiende por fuera de servicio cuando el camión está en el taller (tiene 
+/*MÃ¡ximo tiempo fuera de servicio de cada camiÃ³n por cuatrimestre 
+Se entiende por fuera de servicio cuando el camiÃ³n estÃ¡ en el taller (tiene 
 una OT) y no se encuentra disponible para un viaje. */
 
 
@@ -353,7 +349,7 @@ AS
 	group by  bti.cuatrimestre, bac.camion_id, bc.patente
 GO
 
---Desvío promedio de cada tarea x taller (dif entre planificacion y ejecucion)
+--DesvÃ­o promedio de cada tarea x taller (dif entre planificacion y ejecucion)
 
 
 IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_DESVIO_TAREA')
@@ -366,7 +362,7 @@ AS
 	group by taller_id, tarea_id
 GO
 
--- Los 10 materiales más utilizados por taller
+-- Los 10 materiales mÃ¡s utilizados por taller
 
 IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_10_MAS_USADOS')
 DROP VIEW  los_desnormalizados.BI_10_MAS_USADOS
@@ -398,7 +394,7 @@ AS
 	group by bcho.rango_edad
 GO
 
-/*Costo total de mantenimiento por camión, por taller, por cuatrimestre.
+/*Costo total de mantenimiento por camiÃ³n, por taller, por cuatrimestre.
 Se entiende por costo de mantenimiento el costo de materiales + el costo
 de mano de obra insumido en cada tarea (correctivas y preventivas)*/
 
@@ -420,7 +416,7 @@ GO
 
 
 
-/*Las 5 tareas que más se realizan por modelo de camión.*/
+/*Las 5 tareas que mÃ¡s se realizan por modelo de camiÃ³n.*/
 IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_TAREAS_MAS_REALIZADAS_X_MODELO')
 DROP VIEW  los_desnormalizados.BI_TAREAS_MAS_REALIZADAS_X_MODELO
 GO
@@ -438,8 +434,8 @@ AS
 	GROUP BY bm.modelo_descripcion, dt.descripcion 
 GO
 
-/*Facturación total por recorrido por cuatrimestre. (En función de la cantidad
-y tipo de paquetes que transporta el camión y el recorrido)*/
+/*FacturaciÃ³n total por recorrido por cuatrimestre. (En funciÃ³n de la cantidad
+y tipo de paquetes que transporta el camiÃ³n y el recorrido)*/
 IF EXISTS(SELECT [name] FROM sys.views WHERE [name] = 'BI_FACTURACION_X_RECORRIDO')
 DROP VIEW  los_desnormalizados.BI_FACTURACION_X_RECORRIDO
 GO
@@ -453,9 +449,9 @@ AS
 GO
 
 
-/*Ganancia por camión (Ingresos – Costo de viaje – Costo de mantenimiento)
-o Ingresos: en función de la cantidad y tipo de paquetes que
-transporta el camión y el recorrido.
+/*Ganancia por camiÃ³n (Ingresos Â– Costo de viaje Â– Costo de mantenimiento)
+o Ingresos: en funciÃ³n de la cantidad y tipo de paquetes que
+transporta el camiÃ³n y el recorrido.
 o Costo de viaje: costo del chofer + el costo de combustible.
 Tomar precio por lt de combustible $100.-
 o Costo de mantenimiento: costo de materiales + costo de mano de
