@@ -323,7 +323,7 @@ SELECT v.viaje_id, brr.recorrido_id, bc.camion_id, legajo, bti.tiempo_id, DATEDI
 	GROUP BY brr.recorrido_id, v.viaje_id, bc.camion_id, legajo, bti.tiempo_id, v.fecha_inicio, v.fecha_fin, brr.precio
 	ORDER BY 1,2,3,4,5,6,7
 
-ALTER TABLE los_desnormalizados.BI_FACT_ARREGLO_CAMION 
+ALTER TABLE los_desnormalizados.BI_FACT_INFO_VIAJE 
 ADD CONSTRAINT FK_BI_legajo FOREIGN KEY (legajo) REFERENCES los_desnormalizados.BI_DIM_MECANICO(legajo),
 	CONSTRAINT FK_BI_viaje FOREIGN KEY (viaje_id) REFERENCES los_desnormalizados.BI_DIM_VIAJE(viaje_id),
 	CONSTRAINT FK_BI_camion FOREIGN KEY (camion_id) REFERENCES los_desnormalizados.BI_DIM_CAMION(camion_id),
